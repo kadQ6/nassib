@@ -36,7 +36,7 @@ import {
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type EquipStatus = "À définir" | "Validé" | "Commandé" | "Livré" | "Installé" | "Mis en service"
+type EquipStatus = "À définir" | "Validé" | "Commandé" | "Livré" | "Installé" | "Mis en service" | "Bloqué"
 
 interface Prerequisite {
   label: string
@@ -272,6 +272,7 @@ const statusColors: Record<EquipStatus, string> = {
   Livré: "bg-purple-100 text-purple-700",
   Installé: "bg-teal-100 text-teal-700",
   "Mis en service": "bg-green-100 text-green-700",
+  "Bloqué": "bg-red-100 text-red-700",
 }
 
 function StatusBadge({ statut }: { statut: EquipStatus }) {

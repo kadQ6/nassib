@@ -1,20 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import {
-  TrendingUp,
-  DollarSign,
-  Building2,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  FileText,
-  Download,
-  ChevronDown,
-} from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { DollarSign, TrendingUp, CheckCircle, AlertCircle, FileText, Download, ChevronDown, Clock, Building2 } from "lucide-react"
 import {
   BarChart,
   Bar,
@@ -28,19 +15,15 @@ import {
   Pie,
   Cell,
 } from "recharts"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type BoqStatus = "en_cours" | "non_commence" | "termine"
 type PaymentStatus = "paye" | "approuve" | "en_verification" | "soumis" | "bloque"
-type LotCode =
-  | "LOT-GC"
-  | "LOT-CFO"
-  | "LOT-CVC"
-  | "LOT-PLB"
-  | "LOT-FLU"
-  | "LOT-VRD"
-  | "LOT-BIO"
+
+// ─── Interfaces ───────────────────────────────────────────────────────────────
 
 interface BoqItem {
   id: string
@@ -742,8 +725,8 @@ export default function BudgetPage() {
                         width={40}
                       />
                       <Tooltip
-                        formatter={(value: number) => [
-                          `${formatNum(value)} DJF`,
+                        formatter={(value) => [
+                          `${formatNum(Number(value ?? 0))} DJF`,
                         ]}
                         contentStyle={{
                           fontSize: 12,
@@ -790,8 +773,8 @@ export default function BudgetPage() {
                           ))}
                         </Pie>
                         <Tooltip
-                          formatter={(value: number) => [
-                            `${formatNum(value)} DJF`,
+                          formatter={(value) => [
+                            `${formatNum(Number(value ?? 0))} DJF`,
                             "Montant contrat",
                           ]}
                           contentStyle={{

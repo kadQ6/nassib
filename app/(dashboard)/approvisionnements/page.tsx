@@ -423,7 +423,7 @@ export default function ApprovisionnementsPage() {
                 <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #E2E8F0" }}
-                  formatter={(v: number, n: string) => [v, n === "prevu" ? "Prévues" : "Réelles"]}
+                  formatter={(v, n) => [v, n === "prevu" ? "Prévues" : "Réelles"] as [typeof v, string]}
                 />
                 <Legend formatter={(v) => <span className="text-xs text-slate-600">{v === "prevu" ? "Prévues" : "Réelles"}</span>} />
                 <Bar dataKey="prevu" fill="#93C5FD" radius={[3, 3, 0, 0]} />

@@ -1,585 +1,259 @@
-"use client"
+'use client'
 
-import { useState } from "react"
+import { useState, useMemo } from 'react'
+import { Info, Package, ShoppingCart, Truck, CheckCircle, ClipboardList } from 'lucide-react'
 import {
-  Activity,
-  AlertTriangle,
-  Filter,
-  ChevronRight,
-  CheckCircle2,
-  XCircle,
-  Zap,
-  Droplets,
-  Wifi,
-  Wind,
-  Package,
-  Plus,
-} from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts'
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
-
-type EquipStatus = "À définir" | "Validé" | "Commandé" | "Livré" | "Installé" | "Mis en service" | "Bloqué"
-
-interface Prerequisite {
-  label: string
-  status: "ok" | "nok" | "pending"
-}
-
-interface EquipItem {
-  id: string
-  code: string
-  designation: string
-  zone: string
-  local: string
-  fournisseur: string
-  statut: EquipStatus
-  livraisonPrevue: string
-  quantite: number
-  categorie: string
-  puissance: string
-  poids: string
-  dimensions: string
-  prerequisites: Prerequisite[]
-  instructions: string
-}
-
-// ─── Mock Data ─────────────────────────────────────────────────────────────────
-
-const mockEquipements: EquipItem[] = [
-  {
-    id: "1", code: "EBM-001", designation: "Table d'accouchement électrique", zone: "Bloc Obstétrique", local: "Salle d'accouchement SA-01",
-    fournisseur: "SCHMITZ & SOEHNE", statut: "Commandé", livraisonPrevue: "15/03/2026", quantite: 3, categorie: "Obstétrique",
-    puissance: "400W", poids: "180 kg", dimensions: "2000×900×800 mm",
-    prerequisites: [
-      { label: "CFO — Prise 230V/16A étanche", status: "ok" },
-      { label: "Réseau — RJ45 Cat6A", status: "pending" },
-      { label: "Plomberie — Point d'eau + évacuation", status: "ok" },
-      { label: "Fluides — O2 + Vide médical + Air comprimé", status: "nok" },
-      { label: "CVC — Temp ambiante 20-26°C", status: "pending" },
-    ],
-    instructions: "Livraison par palette. Accès par monte-charge service. Installation par technicien agréé fournisseur. Tests fonctionnels avec sage-femme référente.",
-  },
-  {
-    id: "2", code: "EBM-002", designation: "Couveuse néonatale intensive", zone: "Néonatologie", local: "Unité néonatologie soins intensifs",
-    fournisseur: "DRAGER MEDICAL", statut: "Commandé", livraisonPrevue: "01/04/2026", quantite: 4, categorie: "Néonatologie",
-    puissance: "600W", poids: "95 kg", dimensions: "1100×620×1350 mm",
-    prerequisites: [
-      { label: "CFO — Circuit dédié 230V/10A non interruptible", status: "ok" },
-      { label: "Réseau — Port réseau hôpital", status: "nok" },
-      { label: "Plomberie — Non requis", status: "ok" },
-      { label: "Fluides — O2 + Vide médical", status: "nok" },
-      { label: "CVC — Filtration HEPA classe ISO 7", status: "pending" },
-    ],
-    instructions: "Déconditionnement en salle propre. Étalonnage capteurs T° et humidité par technicien biomédical avant mise en service.",
-  },
-  {
-    id: "3", code: "EBM-003", designation: "Moniteur multiparamètres", zone: "Urgences", local: "Box Urgences BU-01 à BU-06",
-    fournisseur: "PHILIPS HEALTHCARE", statut: "Livré", livraisonPrevue: "10/01/2026", quantite: 6, categorie: "Surveillance",
-    puissance: "120W", poids: "12 kg", dimensions: "380×290×250 mm",
-    prerequisites: [
-      { label: "CFO — Prise 230V/10A avec terre", status: "ok" },
-      { label: "Réseau — RJ45 VLAN médical", status: "nok" },
-      { label: "Plomberie — Non requis", status: "ok" },
-      { label: "Fluides — O2 si capnographie", status: "pending" },
-      { label: "CVC — Pas de contrainte spécifique", status: "ok" },
-    ],
-    instructions: "Configuration centrale de monitoring à paramétrer par ingénieur biomédical. Intégration DPI selon protocole informatique hôpital.",
-  },
-  {
-    id: "4", code: "EBM-004", designation: "Défibrillateur semi-automatique", zone: "Urgences", local: "Urgences — Zone Déchocage",
-    fournisseur: "ZOLL MEDICAL", statut: "Livré", livraisonPrevue: "10/01/2026", quantite: 2, categorie: "Réanimation",
-    puissance: "200W max", poids: "6 kg", dimensions: "310×230×145 mm",
-    prerequisites: [
-      { label: "CFO — Prise de charge 230V", status: "ok" },
-      { label: "Réseau — Non requis", status: "ok" },
-      { label: "Plomberie — Non requis", status: "ok" },
-      { label: "Fluides — Non requis", status: "ok" },
-      { label: "CVC — Pas de contrainte", status: "ok" },
-    ],
-    instructions: "Vérification batteries et électrodes avant mise en service. Test hebdomadaire automatique. Formation personnel obligatoire.",
-  },
-  {
-    id: "5", code: "EBM-005", designation: "Échographe obstétrical", zone: "Gynécologie", local: "Consultation Gynécologie GYN-01",
-    fournisseur: "GE HEALTHCARE", statut: "Commandé", livraisonPrevue: "20/03/2026", quantite: 1, categorie: "Imagerie",
-    puissance: "800W", poids: "140 kg", dimensions: "500×700×1600 mm",
-    prerequisites: [
-      { label: "CFO — Circuit dédié 230V/16A", status: "ok" },
-      { label: "Réseau — PACS et réseau hôpital", status: "nok" },
-      { label: "Plomberie — Lavabo dans salle", status: "ok" },
-      { label: "Fluides — Non requis", status: "ok" },
-      { label: "CVC — Pièce climatisée < 26°C", status: "pending" },
-    ],
-    instructions: "Installation et qualification par ingénieur GE. Formation échographiste par application specialist. Connexion PACS obligatoire avant utilisation.",
-  },
-  {
-    id: "6", code: "EBM-006", designation: "Table opératoire césarienne", zone: "Bloc Opératoire", local: "Salle opératoire BO-01 et BO-02",
-    fournisseur: "MAQUET GETINGE", statut: "Commandé", livraisonPrevue: "01/04/2026", quantite: 2, categorie: "Chirurgie",
-    puissance: "1200W", poids: "360 kg", dimensions: "2100×560×700/1050 mm",
-    prerequisites: [
-      { label: "CFO — 3×400V/16A tête de lit", status: "pending" },
-      { label: "Réseau — Non requis", status: "ok" },
-      { label: "Plomberie — Non requis", status: "ok" },
-      { label: "Fluides — O2 + Vide + Air (têtes de colonne)", status: "nok" },
-      { label: "CVC — Salle classe ISO 5 ou 7", status: "nok" },
-    ],
-    instructions: "Ancrage sol par technicien MAQUET. Qualification OQ et PQ obligatoires. Test de fonctionnement en présence chirurgien référent.",
-  },
-  {
-    id: "7", code: "EBM-007", designation: "Autoclave vapeur 134L", zone: "Stérilisation", local: "Salle stérilisation STER-01",
-    fournisseur: "STERNE INDUSTRIE", statut: "À définir", livraisonPrevue: "15/05/2026", quantite: 1, categorie: "Stérilisation",
-    puissance: "9000W", poids: "580 kg", dimensions: "1400×760×1200 mm",
-    prerequisites: [
-      { label: "CFO — Triphasé 400V/32A avec disjoncteur dédié", status: "nok" },
-      { label: "Réseau — Non requis", status: "ok" },
-      { label: "Plomberie — Alimentation EF DN25 + vidange DN40", status: "nok" },
-      { label: "Fluides — Alimentation vapeur ou GV électrique", status: "nok" },
-      { label: "CVC — Extraction vapeur obligatoire", status: "nok" },
-    ],
-    instructions: "Génie civil préalable : dalle renforcée 1000 kg/m². Qualification IQ, OQ, PQ selon EN 285. Certification obligatoire avant utilisation.",
-  },
-  {
-    id: "8", code: "EBM-008", designation: "Analyseur biochimie automatisé", zone: "Laboratoire", local: "Laboratoire biochimie LABO-01",
-    fournisseur: "BECKMAN COULTER", statut: "Validé", livraisonPrevue: "01/06/2026", quantite: 1, categorie: "Laboratoire",
-    puissance: "2000W", poids: "320 kg", dimensions: "1700×720×1200 mm",
-    prerequisites: [
-      { label: "CFO — Circuit 230V/20A stabilisé + onduleur", status: "pending" },
-      { label: "Réseau — LAN hôpital + SIL", status: "nok" },
-      { label: "Plomberie — EF + EU déchets liquides chimiques", status: "pending" },
-      { label: "Fluides — Eau de qualité RO", status: "nok" },
-      { label: "CVC — Temp 18-26°C, HR 20-80%", status: "pending" },
-    ],
-    instructions: "Installation par Application Specialist BECKMAN. Qualification analytique avec biochimiste référent. Connexion SIL avant mise en service.",
-  },
-  {
-    id: "9", code: "EBM-009", designation: "Groupe électrogène 250 KVA", zone: "Local Technique", local: "Local GE extérieur Est",
-    fournisseur: "SDMO KOHLER", statut: "Commandé", livraisonPrevue: "01/02/2026", quantite: 1, categorie: "Énergie",
-    puissance: "250 KVA / 200 kW", poids: "2800 kg", dimensions: "3500×1100×1800 mm",
-    prerequisites: [
-      { label: "CFO — TGBT raccordement inverseur", status: "pending" },
-      { label: "Réseau — Non requis", status: "ok" },
-      { label: "Plomberie — Système dépollution huiles", status: "nok" },
-      { label: "Fluides — Cuve fioul 1000L enterrée", status: "nok" },
-      { label: "CVC — Ventilation locale, extraction gaz", status: "pending" },
-    ],
-    instructions: "Génie civil : dalle 200mm armée. Canalisation d'échappement vers extérieur. Test de charge 100% avant réception. Certification APAVE.",
-  },
-  {
-    id: "10", code: "EBM-010", designation: "UPS (onduleur) 80 KVA", zone: "Local Technique", local: "Local onduleurs RDC-T02",
-    fournisseur: "SCHNEIDER ELECTRIC", statut: "Commandé", livraisonPrevue: "01/02/2026", quantite: 1, categorie: "Énergie",
-    puissance: "80 KVA", poids: "780 kg", dimensions: "800×800×1800 mm",
-    prerequisites: [
-      { label: "CFO — TGBT jeu de barres prioritaire", status: "pending" },
-      { label: "Réseau — Supervision SCADA", status: "nok" },
-      { label: "Plomberie — Non requis", status: "ok" },
-      { label: "Fluides — Non requis", status: "ok" },
-      { label: "CVC — Climatisation local < 25°C obligatoire", status: "nok" },
-    ],
-    instructions: "Installation et mise en service par électricien habilité HT. Tests sur batteries 1h autonomie. Intégration supervision GTB.",
-  },
-  {
-    id: "11", code: "EBM-011", designation: "Moniteur multiparamètres (Hospit)", zone: "Hospitalisation", local: "Chambres R+1 H-01 à H-12",
-    fournisseur: "PHILIPS HEALTHCARE", statut: "Commandé", livraisonPrevue: "15/03/2026", quantite: 6, categorie: "Surveillance",
-    puissance: "120W", poids: "12 kg", dimensions: "380×290×250 mm",
-    prerequisites: [
-      { label: "CFO — Prise tête de lit 230V/10A", status: "ok" },
-      { label: "Réseau — RJ45 VLAN médical", status: "nok" },
-      { label: "Plomberie — Non requis", status: "ok" },
-      { label: "Fluides — O2 mural si SpO2 ext.", status: "ok" },
-      { label: "CVC — Pas de contrainte", status: "ok" },
-    ],
-    instructions: "Configuration réseau par DSI avant mise en service. Intégration centrale de monitoring urgences.",
-  },
-  {
-    id: "12", code: "EBM-012", designation: "Table d'accouchement électrique", zone: "Bloc Obstétrique", local: "Salle d'accouchement SA-02",
-    fournisseur: "SCHMITZ & SOEHNE", statut: "Commandé", livraisonPrevue: "15/03/2026", quantite: 3, categorie: "Obstétrique",
-    puissance: "400W", poids: "180 kg", dimensions: "2000×900×800 mm",
-    prerequisites: [
-      { label: "CFO — Prise 230V/16A étanche", status: "ok" },
-      { label: "Réseau — RJ45 Cat6A", status: "pending" },
-      { label: "Plomberie — Point d'eau + évacuation", status: "ok" },
-      { label: "Fluides — O2 + Vide médical + Air comprimé", status: "nok" },
-      { label: "CVC — Temp ambiante 20-26°C", status: "pending" },
-    ],
-    instructions: "Même modèle que EBM-001. Installation groupée par technicien agréé.",
-  },
-  {
-    id: "13", code: "EBM-013", designation: "Couveuse néonatale (Néonatologie)", zone: "Néonatologie", local: "Néonatologie N-05 à N-08",
-    fournisseur: "DRAGER MEDICAL", statut: "À définir", livraisonPrevue: "01/05/2026", quantite: 4, categorie: "Néonatologie",
-    puissance: "600W", poids: "95 kg", dimensions: "1100×620×1350 mm",
-    prerequisites: [
-      { label: "CFO — Circuit non interruptible", status: "pending" },
-      { label: "Réseau — VLAN médical", status: "nok" },
-      { label: "Plomberie — Non requis", status: "ok" },
-      { label: "Fluides — O2 + Vide", status: "nok" },
-      { label: "CVC — ISO 7 en cours de qualification", status: "nok" },
-    ],
-    instructions: "Livraison différée après qualification HVAC néonatologie.",
-  },
-  {
-    id: "14", code: "EBM-014", designation: "Lampe scialytique LED double", zone: "Bloc Opératoire", local: "Salle BO-01 et BO-02",
-    fournisseur: "BERCHTOLD STRYKER", statut: "Validé", livraisonPrevue: "01/04/2026", quantite: 2, categorie: "Chirurgie",
-    puissance: "500W", poids: "42 kg", dimensions: "Portée 1200mm",
-    prerequisites: [
-      { label: "CFO — Alimentation plafond 230V dédiée", status: "pending" },
-      { label: "Réseau — Connexion écran chirurgien", status: "nok" },
-      { label: "Plomberie — Non requis", status: "ok" },
-      { label: "Fluides — Non requis", status: "ok" },
-      { label: "CVC — Intégration caisson plafond technique", status: "nok" },
-    ],
-    instructions: "Fixation au plafond technique béton par spécialiste. Réglage intensité et IRc selon protocole chirurgical.",
-  },
-  {
-    id: "15", code: "EBM-015", designation: "Centrale traitement d'air bloc", zone: "Bloc Opératoire", local: "Local CTA toiture R+3",
-    fournisseur: "CARRIER FRANCE", statut: "Bloqué", livraisonPrevue: "15/02/2026", quantite: 1, categorie: "Infrastructure",
-    puissance: "22 kW", poids: "1850 kg", dimensions: "5200×2200×2100 mm",
-    prerequisites: [
-      { label: "CFO — Tableau divisionnaire CTA 400V/63A", status: "nok" },
-      { label: "Réseau — Régulation GTB BACnet", status: "nok" },
-      { label: "Plomberie — Alimentation eau glacée DN50", status: "nok" },
-      { label: "Fluides — Non requis", status: "ok" },
-      { label: "CVC — Dalle toiture renforcée 2500 kg/m²", status: "nok" },
-    ],
-    instructions: "BLOQUÉ: prérequis génie civil non validés. Levage par grue. Raccordement groupes froid 90 kW. Qualification aéraulique ISO 5 obligatoire.",
-  },
+const EQUIP = [
+  {id:'e1',code:'BIO-BO1-TABLE',nom:"Table d'opération électrohydraulique",categorie:'Bloc Opératoire',local:'Bloc opératoire 1',local_code:'R01-01',marque:'Maquet',modele:'Alphamaxx',quantite:1,prix_unitaire:8500000,statut:'Non commandé',date_livraison_prevue:'2025-08-01',prerequis:'Sol renforcé, prise 400V et O2'},
+  {id:'e2',code:'BIO-BO1-SCIAL',nom:'Éclairage scialytique LED',categorie:'Bloc Opératoire',local:'Bloc opératoire 1',local_code:'R01-01',marque:'Trumpf Medical',modele:'iLED 5',quantite:2,prix_unitaire:6200000,statut:'Non commandé',date_livraison_prevue:'2025-08-01',prerequis:'Plafond terminé, accroche fixée'},
+  {id:'e3',code:'BIO-BO1-ANES',nom:"Appareil d'anesthésie",categorie:'Anesthésie',local:'Bloc opératoire 1',local_code:'R01-01',marque:'Dräger',modele:'Primus',quantite:1,prix_unitaire:12000000,statut:'Non commandé',date_livraison_prevue:'2025-09-01',prerequis:'O2, vide, air médical, N2O installés'},
+  {id:'e4',code:'BIO-BO2-TABLE',nom:"Table d'opération orthopédique",categorie:'Bloc Opératoire',local:'Bloc opératoire 2',local_code:'R01-02',marque:'Maquet',modele:'Beta',quantite:1,prix_unitaire:9200000,statut:'Non commandé',date_livraison_prevue:'2025-09-01',prerequis:'Sol renforcé, prise 400V'},
+  {id:'e5',code:'BIO-NEO-INC',nom:'Incubateur néonatologie',categorie:'Néonatologie',local:'Unité néonatologie',local_code:'R02-04',marque:'GE Healthcare',modele:'Giraffe',quantite:6,prix_unitaire:4200000,statut:'Non commandé',date_livraison_prevue:'2025-07-01',prerequis:'Prises UPS et O2, CVC classe ISO 7'},
+  {id:'e6',code:'BIO-URG-MON',nom:'Moniteur multiparamétrique',categorie:'Monitoring',local:'Box urgences 1',local_code:'RDC-04',marque:'Mindray',modele:'iMEC-10',quantite:2,prix_unitaire:3500000,statut:'Non commandé',date_livraison_prevue:'2025-07-01',prerequis:'Prises UPS et O2 installées'},
+  {id:'e7',code:'BIO-URG-DEF',nom:'Défibrillateur',categorie:'Urgences',local:'Salle de déchocage',local_code:'RDC-06',marque:'Philips',modele:'HeartStart XL+',quantite:1,prix_unitaire:1800000,statut:'Commandé',date_livraison_prevue:'2025-06-01',prerequis:'Aucun'},
+  {id:'e8',code:'BIO-SSPI-MON',nom:'Moniteur post-anesthésie',categorie:'Monitoring',local:'SSPI — Salle de réveil',local_code:'R01-03',marque:'Mindray',modele:'BeneVision N17',quantite:4,prix_unitaire:4800000,statut:'Non commandé',date_livraison_prevue:'2025-08-01',prerequis:'O2 et vide installés, prise UPS'},
+  {id:'e9',code:'BIO-ACC1-CTG',nom:'Cardiotocographe',categorie:'Obstétrique',local:"Salle d'accouchement 1",local_code:'R02-01',marque:'GE Healthcare',modele:'Corometrics',quantite:1,prix_unitaire:2100000,statut:'Non commandé',date_livraison_prevue:'2025-07-01',prerequis:'Prises électriques installées'},
+  {id:'e10',code:'BIO-CH1-LIT',nom:'Lit médicalisé électrique',categorie:'Hospitalisation',local:'Chambre chirurgie 1',local_code:'R01-07',marque:'Hillenbrand',modele:'Progressa',quantite:2,prix_unitaire:850000,statut:'Non commandé',date_livraison_prevue:'2025-06-01',prerequis:'Prise 220V et appel malade'},
+  {id:'e11',code:'BIO-RAD-RX',nom:'Appareil radiologie numérique',categorie:'Imagerie',local:'Salle de radiologie',local_code:'RDC-07',marque:'Siemens',modele:'Ysio Max',quantite:1,prix_unitaire:22000000,statut:'Non commandé',date_livraison_prevue:'2025-08-01',prerequis:'Protection plomb, prise 400V, gaine haute tension'},
+  {id:'e12',code:'BIO-ECHO',nom:"Échographe",categorie:'Imagerie',local:"Salle d'échographie",local_code:'RDC-08',marque:'Samsung',modele:'HERA W10',quantite:1,prix_unitaire:6500000,statut:'Non commandé',date_livraison_prevue:'2025-07-01',prerequis:'Prise UPS, réseau IP'},
+  {id:'e13',code:'BIO-LAB-AUTO',nom:'Automate biochimie',categorie:'Laboratoire',local:'Laboratoire',local_code:'RDC-12',marque:'Roche',modele:'cobas c 311',quantite:1,prix_unitaire:8500000,statut:'Non commandé',date_livraison_prevue:'2025-08-01',prerequis:'Prise 220V, eau déminéralisée, ventilation'},
+  {id:'e14',code:'BIO-URG-POMP',nom:'Pousse-seringue électrique',categorie:'Urgences',local:'Box urgences 2',local_code:'RDC-05',marque:'Fresenius Kabi',modele:'Agilia',quantite:4,prix_unitaire:280000,statut:'Commandé',date_livraison_prevue:'2025-05-01',prerequis:'Prises UPS'},
+  {id:'e15',code:'BIO-BO1-ELEC',nom:'Bistouri électrique',categorie:'Bloc Opératoire',local:'Bloc opératoire 1',local_code:'R01-01',marque:'Erbe',modele:'VIO 3',quantite:1,prix_unitaire:3200000,statut:'Non commandé',date_livraison_prevue:'2025-08-01',prerequis:'Réseau équipotentiel'},
 ]
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-
-const STATUS_ORDER: EquipStatus[] = ["À définir", "Validé", "Commandé", "Livré", "Installé", "Mis en service"]
-
-const statusColors: Record<EquipStatus, string> = {
-  "À définir": "bg-slate-100 text-slate-700",
-  Validé: "bg-blue-100 text-blue-700",
-  Commandé: "bg-amber-100 text-amber-700",
-  Livré: "bg-purple-100 text-purple-700",
-  Installé: "bg-teal-100 text-teal-700",
-  "Mis en service": "bg-green-100 text-green-700",
-  "Bloqué": "bg-red-100 text-red-700",
+const STATUT_COLORS: Record<string, string> = {
+  'Non commandé': 'bg-slate-100 text-slate-600',
+  'Commandé':     'bg-blue-100 text-blue-700',
+  'Livré':        'bg-purple-100 text-purple-700',
+  'Installé':     'bg-yellow-100 text-yellow-700',
+  'Validé':       'bg-green-100 text-green-700',
 }
 
-function StatusBadge({ statut }: { statut: EquipStatus }) {
-  return <Badge className={`${statusColors[statut]} border-0 text-xs`}>{statut}</Badge>
+const CHART_COLORS = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#f97316']
+
+function formatDZA(n: number) {
+  return new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD', maximumFractionDigits: 0 }).format(n)
 }
 
-function StatusProgress({ statut }: { statut: EquipStatus }) {
-  const idx = STATUS_ORDER.indexOf(statut)
-  const pct = Math.round(((idx + 1) / STATUS_ORDER.length) * 100)
-  const colors = ["bg-slate-400", "bg-blue-500", "bg-amber-500", "bg-purple-500", "bg-teal-500", "bg-green-500"]
+function StatutBadge({ statut }: { statut: string }) {
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
-        <div className={`h-1.5 rounded-full ${colors[idx]}`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className="text-xs text-slate-500 w-8 text-right">{pct}%</span>
+    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${STATUT_COLORS[statut] ?? 'bg-gray-100 text-gray-600'}`}>
+      {statut}
+    </span>
+  )
+}
+
+function TooltipPrereq({ text }: { text: string }) {
+  const [show, setShow] = useState(false)
+  return (
+    <div className="relative inline-block">
+      <button
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        className="text-slate-400 hover:text-slate-600"
+      >
+        <Info size={15} />
+      </button>
+      {show && (
+        <div className="absolute z-50 bottom-6 left-1/2 -translate-x-1/2 w-56 bg-slate-800 text-white text-xs rounded-lg px-3 py-2 shadow-xl pointer-events-none">
+          <p className="font-semibold mb-1 text-slate-300">Prérequis</p>
+          {text}
+        </div>
+      )}
     </div>
   )
 }
 
-const prereqIcons: Record<string, React.ReactNode> = {
-  CFO: <Zap className="w-3.5 h-3.5" />,
-  Réseau: <Wifi className="w-3.5 h-3.5" />,
-  Plomberie: <Droplets className="w-3.5 h-3.5" />,
-  Fluides: <Wind className="w-3.5 h-3.5" />,
-  CVC: <Wind className="w-3.5 h-3.5" />,
-}
-
-// ─── Equipment Detail Modal ────────────────────────────────────────────────────
-
-function EquipDetailModal({ equip, onClose }: { equip: EquipItem | null; onClose: () => void }) {
-  if (!equip) return null
-  const unmetPrereqs = equip.prerequisites.filter((p) => p.status === "nok")
-  const allMet = unmetPrereqs.length === 0
-
-  return (
-    <Dialog open={!!equip} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-sm text-slate-500">{equip.code}</span>
-            <span>{equip.designation}</span>
-            <StatusBadge statut={equip.statut} />
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-5">
-          {/* Alert if prereqs not met */}
-          {!allMet && (
-            <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
-              <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-red-700 font-medium">
-                {unmetPrereqs.length} prérequis non satisfait{unmetPrereqs.length > 1 ? "s" : ""} — Installation impossible avant levée des blocages.
-              </p>
-            </div>
-          )}
-
-          {/* Specs */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {[
-              { label: "Zone", value: equip.zone },
-              { label: "Local", value: equip.local },
-              { label: "Fournisseur", value: equip.fournisseur },
-              { label: "Quantité", value: `${equip.quantite} unité${equip.quantite > 1 ? "s" : ""}` },
-              { label: "Puissance", value: equip.puissance },
-              { label: "Poids", value: equip.poids },
-              { label: "Dimensions", value: equip.dimensions },
-              { label: "Livraison prévue", value: equip.livraisonPrevue },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-slate-50 rounded-lg p-2.5">
-                <p className="text-xs text-slate-500 mb-0.5">{label}</p>
-                <p className="text-xs font-semibold text-slate-800">{value}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Workflow */}
-          <div>
-            <p className="text-sm font-semibold text-slate-700 mb-2">Workflow</p>
-            <div className="flex items-center gap-1 overflow-x-auto pb-1">
-              {STATUS_ORDER.map((s, i) => {
-                const currentIdx = STATUS_ORDER.indexOf(equip.statut)
-                const isDone = i <= currentIdx
-                return (
-                  <div key={s} className="flex items-center gap-1 flex-shrink-0">
-                    <div className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${isDone ? statusColors[s] : "bg-slate-100 text-slate-400"}`}>{s}</div>
-                    {i < STATUS_ORDER.length - 1 && <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isDone && i < currentIdx ? "text-slate-500" : "text-slate-300"}`} />}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Prerequisites */}
-          <div>
-            <p className="text-sm font-semibold text-slate-700 mb-2">Prérequis d&apos;installation</p>
-            <div className="space-y-2">
-              {equip.prerequisites.map((p, i) => {
-                const lotKey = p.label.split(" — ")[0].split(" (")[0].trim()
-                const icon = prereqIcons[lotKey] ?? <Package className="w-3.5 h-3.5" />
-                return (
-                  <div key={i} className={`flex items-start gap-3 p-2.5 rounded-lg border ${p.status === "ok" ? "bg-green-50 border-green-200" : p.status === "nok" ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"}`}>
-                    <div className={`flex-shrink-0 mt-0.5 ${p.status === "ok" ? "text-green-600" : p.status === "nok" ? "text-red-600" : "text-amber-600"}`}>
-                      {icon}
-                    </div>
-                    <p className="text-xs text-slate-700 flex-1">{p.label}</p>
-                    <div className="flex-shrink-0">
-                      {p.status === "ok" ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                      ) : p.status === "nok" ? (
-                        <XCircle className="w-4 h-4 text-red-600" />
-                      ) : (
-                        <div className="w-4 h-4 rounded-full border-2 border-amber-400" />
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Instructions */}
-          <div>
-            <p className="text-sm font-semibold text-slate-700 mb-1">Instructions d&apos;installation</p>
-            <p className="text-xs text-slate-600 bg-slate-50 rounded-lg p-3 leading-relaxed">{equip.instructions}</p>
-          </div>
-        </div>
-        <DialogFooter className="mt-4 flex flex-wrap gap-2">
-          <Button variant="outline" onClick={onClose}>Fermer</Button>
-          <Button variant="outline">PV Livraison</Button>
-          <Button variant="outline">PV Installation</Button>
-          <Button disabled={!allMet} className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50">
-            <CheckCircle2 className="w-4 h-4 mr-1.5" />Valider Mise en Service
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-// ─── Main Page ─────────────────────────────────────────────────────────────────
-
 export default function EquipementsPage() {
-  const [filterZone, setFilterZone] = useState("all")
-  const [filterStatut, setFilterStatut] = useState("all")
-  const [filterCategorie, setFilterCategorie] = useState("all")
-  const [selectedEquip, setSelectedEquip] = useState<EquipItem | null>(null)
+  const [search, setSearch] = useState('')
+  const [filterStatut, setFilterStatut] = useState('Tous')
+  const [filterCategorie, setFilterCategorie] = useState('Toutes')
+  const [filterEtage, setFilterEtage] = useState('Tous')
 
-  const filtered = mockEquipements.filter((e) => {
-    if (filterZone !== "all" && e.zone !== filterZone) return false
-    if (filterStatut !== "all" && e.statut !== filterStatut) return false
-    if (filterCategorie !== "all" && e.categorie !== filterCategorie) return false
-    return true
-  })
+  const categories = useMemo(() => ['Toutes', ...Array.from(new Set(EQUIP.map(e => e.categorie)))], [])
+  const etages = useMemo(() => {
+    const s = new Set(EQUIP.map(e => e.local_code.split('-')[0]))
+    return ['Tous', ...Array.from(s)]
+  }, [])
 
-  const zones = [...new Set(mockEquipements.map((e) => e.zone))]
-  const categories = [...new Set(mockEquipements.map((e) => e.categorie))]
+  const filtered = useMemo(() => {
+    return EQUIP.filter(e => {
+      const q = search.toLowerCase()
+      const matchSearch = !q || e.nom.toLowerCase().includes(q) || e.code.toLowerCase().includes(q) || e.local.toLowerCase().includes(q)
+      const matchStatut = filterStatut === 'Tous' || e.statut === filterStatut
+      const matchCat = filterCategorie === 'Toutes' || e.categorie === filterCategorie
+      const matchEtage = filterEtage === 'Tous' || e.local_code.startsWith(filterEtage)
+      return matchSearch && matchStatut && matchCat && matchEtage
+    })
+  }, [search, filterStatut, filterCategorie, filterEtage])
 
-  const stats = {
-    total: mockEquipements.length,
-    commandes: mockEquipements.filter((e) => e.statut === "Commandé").length,
-    livres: mockEquipements.filter((e) => e.statut === "Livré").length,
-    installes: mockEquipements.filter((e) => e.statut === "Installé").length,
-    bloques: mockEquipements.filter((e) => e.statut === "Bloqué" || (e.prerequisites.some((p) => p.status === "nok") && e.statut !== "Mis en service")).length,
-  }
+  const chartData = useMemo(() => {
+    const map: Record<string, number> = {}
+    EQUIP.forEach(e => { map[e.categorie] = (map[e.categorie] ?? 0) + 1 })
+    return Object.entries(map).map(([cat, count]) => ({ cat, count }))
+  }, [])
 
-  // Alert: equipment with unmet prerequisites
-  const alertEquip = mockEquipements.filter(
-    (e) => e.prerequisites.some((p) => p.status === "nok") && !["À définir", "Mis en service"].includes(e.statut)
-  )
+  const kpis = [
+    { label: 'Total équipements', value: 15, icon: Package, color: 'text-slate-700', bg: 'bg-slate-50' },
+    { label: 'Non commandé', value: EQUIP.filter(e => e.statut === 'Non commandé').length, icon: ClipboardList, color: 'text-slate-600', bg: 'bg-slate-50' },
+    { label: 'Commandé', value: EQUIP.filter(e => e.statut === 'Commandé').length, icon: ShoppingCart, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Livré', value: EQUIP.filter(e => e.statut === 'Livré').length, icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Validé', value: EQUIP.filter(e => e.statut === 'Validé').length, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
+  ]
 
   return (
-    <div className="p-4 lg:p-6 space-y-5">
+    <div className="p-6 max-w-screen-2xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-teal-500" />
-            Équipements Biomédicaux
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">Suivi installation et mise en service — Polyclinique Cité Nassib</p>
-        </div>
-        <Button size="sm" className="gap-1.5 self-start sm:self-auto">
-          <Plus className="w-4 h-4" />Ajouter Équipement
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold text-slate-800">Équipements Biomédicaux</h1>
+        <p className="text-sm text-slate-500 mt-1">Polyclinique Cité Nassib — Suivi et traçabilité du matériel médical</p>
       </div>
 
-      {/* Alert banner */}
-      {alertEquip.length > 0 && (
-        <div className="flex items-start gap-2 bg-amber-50 border border-amber-300 rounded-lg p-3">
-          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-amber-800">
-              {alertEquip.length} équipement{alertEquip.length > 1 ? "s" : ""} avec prérequis non validés
-            </p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              {alertEquip.map((e) => e.code).join(", ")} — Installation bloquée jusqu&apos;à levée des prérequis.
-            </p>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {kpis.map(k => (
+          <div key={k.label} className={`rounded-xl border border-slate-200 ${k.bg} px-4 py-4 flex items-center gap-3`}>
+            <k.icon className={`${k.color} shrink-0`} size={22} />
+            <div>
+              <p className="text-xs text-slate-500 leading-tight">{k.label}</p>
+              <p className={`text-2xl font-bold ${k.color}`}>{k.value}</p>
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        {[
-          { label: "Total", value: stats.total, color: "text-slate-700", bg: "bg-slate-50" },
-          { label: "Commandés", value: stats.commandes, color: "text-amber-700", bg: "bg-amber-50" },
-          { label: "Livrés", value: stats.livres, color: "text-purple-700", bg: "bg-purple-50" },
-          { label: "Installés", value: stats.installes, color: "text-teal-700", bg: "bg-teal-50" },
-          { label: "Prérequis NOK", value: stats.bloques, color: "text-red-700", bg: "bg-red-50" },
-        ].map(({ label, value, color, bg }) => (
-          <Card key={label} className={`${bg} border-0 shadow-sm`}>
-            <CardContent className="p-4">
-              <p className="text-xs text-slate-500">{label}</p>
-              <p className={`text-2xl font-bold ${color}`}>{value}</p>
-            </CardContent>
-          </Card>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Filter className="w-4 h-4 text-slate-400" />
-        <Select value={filterZone} onValueChange={setFilterZone}>
-          <SelectTrigger className="h-8 text-xs w-44"><SelectValue placeholder="Zone" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes les zones</SelectItem>
-            {zones.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterStatut} onValueChange={setFilterStatut}>
-          <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Statut" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous statuts</SelectItem>
-            {STATUS_ORDER.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterCategorie} onValueChange={setFilterCategorie}>
-          <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Catégorie" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes catégories</SelectItem>
-            {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      {/* Filter bar */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <input
+          type="text"
+          placeholder="Rechercher équipement, code, local…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="border border-slate-200 rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-300"
+        />
+        <select
+          value={filterStatut}
+          onChange={e => setFilterStatut(e.target.value)}
+          className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+        >
+          {['Tous','Non commandé','Commandé','Livré','Installé','Validé'].map(s => (
+            <option key={s}>{s}</option>
+          ))}
+        </select>
+        <select
+          value={filterCategorie}
+          onChange={e => setFilterCategorie(e.target.value)}
+          className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+        >
+          {categories.map(c => <option key={c}>{c}</option>)}
+        </select>
+        <select
+          value={filterEtage}
+          onChange={e => setFilterEtage(e.target.value)}
+          className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+        >
+          {etages.map(e => <option key={e}>{e}</option>)}
+        </select>
+        <span className="text-xs text-slate-400 ml-auto">{filtered.length} résultat{filtered.length > 1 ? 's' : ''}</span>
+      </div>
+
+      {/* Chart */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <h2 className="text-sm font-semibold text-slate-600 mb-4">Répartition par catégorie</h2>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={chartData} margin={{ top: 0, right: 20, left: 0, bottom: 40 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <XAxis dataKey="cat" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" />
+            <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+            <Tooltip
+              formatter={(v) => [Number(v ?? 0), 'Équipements'] as [number, string]}
+              contentStyle={{ fontSize: 12 }}
+            />
+            <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+              {chartData.map((_, i) => (
+                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Table */}
-      <Card className="shadow-sm border border-slate-200">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                {["Code", "Désignation", "Zone / Local", "Fournisseur", "Statut / Progression", "Livraison Prévue", "Prérequis", ""].map((h) => (
-                  <th key={h} className="text-left px-3 py-2.5 text-xs font-semibold text-slate-600 whitespace-nowrap">{h}</th>
-                ))}
+              <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide border-b border-slate-200">
+                <th className="px-4 py-3 text-left">Code</th>
+                <th className="px-4 py-3 text-left">Désignation</th>
+                <th className="px-4 py-3 text-left">Local</th>
+                <th className="px-4 py-3 text-left">Catégorie</th>
+                <th className="px-4 py-3 text-right">Qté</th>
+                <th className="px-4 py-3 text-right">Prix total</th>
+                <th className="px-4 py-3 text-center">Livraison prévue</th>
+                <th className="px-4 py-3 text-center">Statut</th>
+                <th className="px-4 py-3 text-center">Prérequis</th>
               </tr>
             </thead>
-            <tbody>
-              {filtered.map((e, idx) => {
-                const nokCount = e.prerequisites.filter((p) => p.status === "nok").length
-                const okCount = e.prerequisites.filter((p) => p.status === "ok").length
-                const total = e.prerequisites.length
-                return (
-                  <tr
-                    key={e.id}
-                    className={`border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors ${idx % 2 !== 0 ? "bg-slate-50/40" : ""}`}
-                    onClick={() => setSelectedEquip(e)}
-                  >
-                    <td className="px-3 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">{e.code}</td>
-                    <td className="px-3 py-3 max-w-[180px]">
-                      <p className="text-xs font-semibold text-slate-800 truncate">{e.designation}</p>
-                      <p className="text-xs text-slate-400">{e.categorie} · qté: {e.quantite}</p>
-                    </td>
-                    <td className="px-3 py-3 max-w-[160px]">
-                      <p className="text-xs font-medium text-slate-700 truncate">{e.zone}</p>
-                      <p className="text-xs text-slate-400 truncate">{e.local}</p>
-                    </td>
-                    <td className="px-3 py-3 text-xs text-slate-600 whitespace-nowrap">{e.fournisseur}</td>
-                    <td className="px-3 py-3 min-w-[160px]">
-                      <StatusBadge statut={e.statut} />
-                      <div className="mt-1.5"><StatusProgress statut={e.statut} /></div>
-                    </td>
-                    <td className="px-3 py-3 text-xs text-slate-600 whitespace-nowrap">{e.livraisonPrevue}</td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`text-xs font-semibold ${nokCount > 0 ? "text-red-600" : "text-green-600"}`}>
-                          {okCount}/{total}
-                        </span>
-                        {nokCount > 0 && <AlertTriangle className="w-3.5 h-3.5 text-red-500" />}
-                        {nokCount === 0 && <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3"><ChevronRight className="w-4 h-4 text-slate-300" /></td>
-                  </tr>
-                )
-              })}
+            <tbody className="divide-y divide-slate-100">
+              {filtered.map(e => (
+                <tr key={e.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-4 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">{e.code}</td>
+                  <td className="px-4 py-3 font-medium text-slate-800 max-w-xs">
+                    <div>{e.nom}</div>
+                    <div className="text-xs text-slate-400 font-normal">{e.marque} — {e.modele}</div>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                    <div>{e.local}</div>
+                    <div className="text-xs text-slate-400">{e.local_code}</div>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{e.categorie}</td>
+                  <td className="px-4 py-3 text-right text-slate-700 font-semibold">{e.quantite}</td>
+                  <td className="px-4 py-3 text-right text-slate-700 whitespace-nowrap font-semibold">
+                    {formatDZA(e.quantite * e.prix_unitaire)}
+                  </td>
+                  <td className="px-4 py-3 text-center text-slate-500 whitespace-nowrap text-xs">
+                    {new Date(e.date_livraison_prevue).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <StatutBadge statut={e.statut} />
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <TooltipPrereq text={e.prerequis} />
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-12 text-center text-slate-400 text-sm">
+                    Aucun équipement ne correspond aux filtres sélectionnés.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
-          {filtered.length === 0 && (
-            <div className="text-center py-12 text-slate-400 text-sm">Aucun équipement trouvé.</div>
-          )}
         </div>
-        <div className="px-4 py-2.5 border-t border-slate-100 text-xs text-slate-500">
-          {filtered.length} équipement{filtered.length !== 1 ? "s" : ""} affiché{filtered.length !== 1 ? "s" : ""}
-        </div>
-      </Card>
 
-      <EquipDetailModal equip={selectedEquip} onClose={() => setSelectedEquip(null)} />
+        {/* Prix total footer */}
+        <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-8 text-sm">
+          <span className="text-slate-500">
+            {filtered.length} équipement{filtered.length > 1 ? 's' : ''} sélectionné{filtered.length > 1 ? 's' : ''}
+          </span>
+          <span className="font-bold text-slate-800">
+            Total : {formatDZA(filtered.reduce((s, e) => s + e.quantite * e.prix_unitaire, 0))}
+          </span>
+        </div>
+      </div>
     </div>
   )
 }

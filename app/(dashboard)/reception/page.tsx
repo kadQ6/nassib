@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -21,37 +32,40 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  CheckCircle,
+  CheckCircle2,
   Circle,
   Clock,
-  AlertTriangle,
   FileText,
+  Download,
   Plus,
-  Check,
+  FlaskConical,
+  ClipboardList,
+  FolderOpen,
 } from "lucide-react";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-type EssaiStatut = "conforme" | "non_conforme" | "planifie" | "non_planifie";
+type PhaseStatus = "completed" | "in_progress" | "not_started";
+
+interface Phase {
+  label: string;
+  status: PhaseStatus;
+  progress: number;
+}
+
+type EssaiStatut = "réalisé" | "planifié" | "non_planifié";
+type EssaiResultat = "conforme" | "non_conforme" | "";
 
 interface Essai {
   id: number;
-  systeme: string;
+  système: string;
   zone: string;
   type: string;
   datePrevue: string;
   dateReelle: string;
   responsable: string;
-  resultat: string;
+  resultat: EssaiResultat;
+  pv: string;
   statut: EssaiStatut;
 }
 
@@ -59,127 +73,149 @@ interface ChecklistItem {
   id: number;
   label: string;
   checked: boolean;
-  comment: string;
 }
 
-interface DOEItem {
-  document: string;
-  responsable: string;
-  statut: "Reçu" | "En cours" | "En attente" | "Non remis";
-  dateRemise: string;
+type DOEStatut = "remis" | "en_cours" | "non_remis";
+
+interface DOEDocument {
+  doc: string;
+  lot: string;
+  statut: DOEStatut;
+  date: string;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Mock Data ────────────────────────────────────────────────────────────────
 
-const PHASES = [
-  { label: "Essais Intermédiaires", progress: 40, status: "in_progress" },
-  { label: "Essais Finaux", progress: 0, status: "not_started" },
-  { label: "OPR", progress: 0, status: "not_started" },
-  { label: "Réception Provisoire", progress: 0, status: "not_started" },
-  { label: "Levée Réserves", progress: 0, status: "not_started" },
-  { label: "DOE Remis", progress: 0, status: "not_started" },
-  { label: "Mise en Exploitation", progress: 0, status: "not_started" },
+const PHASES: Phase[] = [
+  { label: "Essais Intermédiaires", status: "in_progress", progress: 40 },
+  { label: "Essais Finaux", status: "not_started", progress: 0 },
+  { label: "OPR", status: "not_started", progress: 0 },
+  { label: "Réception Provisoire", status: "not_started", progress: 0 },
+  { label: "Levée Réserves", status: "not_started", progress: 0 },
+  { label: "DOE Remis", status: "not_started", progress: 0 },
+  { label: "Mise en Exploitation", status: "not_started", progress: 0 },
 ];
 
 const ESSAIS_MOCK: Essai[] = [
   {
     id: 1,
-    systeme: "Alimentation EF/EC",
-    zone: "Ensemble bâtiment",
-    type: "Pression",
-    datePrevue: "15/05/2026",
-    dateReelle: "18/05/2026",
-    responsable: "MedFluides",
-    resultat: "Conforme",
-    statut: "conforme",
+    système: "EF/EC",
+    zone: "RDC Général",
+    type: "Pression réseau",
+    datePrevue: "20/06/2026",
+    dateReelle: "20/06/2026",
+    responsable: "R. Meziane",
+    resultat: "conforme",
+    pv: "PV-001",
+    statut: "réalisé",
   },
   {
     id: 2,
-    systeme: "Plomberie sanitaires",
-    zone: "RDC + R+1",
-    type: "Pression hydraulique",
-    datePrevue: "20/05/2026",
-    dateReelle: "22/05/2026",
-    responsable: "MedFluides",
-    resultat: "Conforme",
-    statut: "conforme",
+    système: "Plomberie",
+    zone: "Bloc obstétrique",
+    type: "Étanchéité",
+    datePrevue: "22/06/2026",
+    dateReelle: "22/06/2026",
+    responsable: "R. Meziane",
+    resultat: "conforme",
+    pv: "PV-002",
+    statut: "réalisé",
   },
   {
     id: 3,
-    systeme: "Électricité CF",
-    zone: "Tableaux TGBT",
-    type: "Vérification continuité",
-    datePrevue: "25/05/2026",
-    dateReelle: "28/05/2026",
-    responsable: "ElecPro",
-    resultat: "Non conforme - reprise nécessaire",
-    statut: "non_conforme",
+    système: "Électricité CF",
+    zone: "TGBT RDC",
+    type: "Continuité/terre",
+    datePrevue: "25/06/2026",
+    dateReelle: "25/06/2026",
+    responsable: "K. Aïssaoui",
+    resultat: "non_conforme",
+    pv: "PV-003",
+    statut: "réalisé",
   },
   {
     id: 4,
-    systeme: "Terre et continuité",
-    zone: "Ensemble bâtiment",
-    type: "Mesure résistance",
-    datePrevue: "25/05/2026",
-    dateReelle: "29/05/2026",
-    responsable: "ElecPro",
-    resultat: "Conforme",
-    statut: "conforme",
+    système: "SSI",
+    zone: "RDC + R+1",
+    type: "Détection incendie",
+    datePrevue: "01/07/2026",
+    dateReelle: "",
+    responsable: "N. Ouali",
+    resultat: "",
+    pv: "",
+    statut: "planifié",
   },
   {
     id: 5,
-    systeme: "SSI",
-    zone: "Ensemble bâtiment",
-    type: "Fonctionnel complet",
-    datePrevue: "10/06/2026",
-    dateReelle: "-",
-    responsable: "SecuFire",
-    resultat: "-",
-    statut: "planifie",
+    système: "CVC",
+    zone: "Bloc opératoire",
+    type: "Débit/température",
+    datePrevue: "05/07/2026",
+    dateReelle: "",
+    responsable: "A. Hamdani",
+    resultat: "",
+    pv: "",
+    statut: "planifié",
   },
   {
     id: 6,
-    systeme: "CVC - CTA",
-    zone: "Sous-sol + R+1",
-    type: "Équilibrage aéraulique",
-    datePrevue: "15/06/2026",
-    dateReelle: "-",
-    responsable: "ClimaMed",
-    resultat: "-",
-    statut: "planifie",
+    système: "Fluides O2",
+    zone: "Bloc opératoire",
+    type: "Pression/débit O2",
+    datePrevue: "10/07/2026",
+    dateReelle: "",
+    responsable: "S. Benali",
+    resultat: "",
+    pv: "",
+    statut: "non_planifié",
   },
   {
     id: 7,
-    systeme: "Fluides O2",
-    zone: "Bloc chirurgie",
-    type: "Étanchéité + pression",
-    datePrevue: "20/06/2026",
-    dateReelle: "-",
-    responsable: "MedGaz",
-    resultat: "-",
-    statut: "planifie",
+    système: "Fluides Vide",
+    zone: "Bloc opératoire",
+    type: "Vide médical",
+    datePrevue: "10/07/2026",
+    dateReelle: "",
+    responsable: "S. Benali",
+    resultat: "",
+    pv: "",
+    statut: "non_planifié",
   },
   {
     id: 8,
-    systeme: "Groupe électrogène",
+    système: "Groupe élec.",
     zone: "Local technique",
-    type: "Test coupure + bascule",
-    datePrevue: "25/06/2026",
-    dateReelle: "-",
-    responsable: "ElecPro",
-    resultat: "-",
-    statut: "non_planifie",
+    type: "Démarrage auto",
+    datePrevue: "15/07/2026",
+    dateReelle: "03/07/2026",
+    responsable: "K. Aïssaoui",
+    resultat: "conforme",
+    pv: "PV-004",
+    statut: "réalisé",
   },
 ];
 
-const CHECKLIST_LABELS = [
+const LOCAL_LIST: string[] = [
+  "Salle de naissance 01",
+  "Salle de naissance 02",
+  "Bloc opératoire 01",
+  "Bloc opératoire 02",
+  "Salle de réveil",
+  "Urgences adultes",
+  "Urgences pédiatriques",
+  "Laboratoire",
+  "Pharmacie",
+  "Bureau médecin 01",
+];
+
+const CHECKLIST_LABELS: string[] = [
   "Local nettoyé",
   "Sol terminé et conforme",
-  "Murs terminés et conformes",
-  "Plafond terminé et conforme",
+  "Murs terminés",
+  "Plafond terminé",
   "Portes/fenêtres posées et fonctionnelles",
   "Éclairage fonctionnel",
-  "Prises électriques fonctionnelles",
+  "Prises fonctionnelles",
   "CVC fonctionnel",
   "Plomberie fonctionnelle",
   "SSI conforme",
@@ -190,752 +226,648 @@ const CHECKLIST_LABELS = [
   "DOE disponible",
 ];
 
-const ROOMS = [
-  "Salle OP 1",
-  "Salle OP 2",
-  "SSPI",
-  "Stérilisation",
-  "Pharmacie",
-  "Laboratoire",
-  "Urgences",
-  "Consultation 1-5",
-  "Radiologie",
-  "Administration",
-];
-
-const ROOM_INITIAL_CHECKS: Record<string, number> = {
-  "Salle OP 1": 6,
-  "Salle OP 2": 3,
-};
-
-function buildChecklist(room: string): ChecklistItem[] {
-  const preChecked = ROOM_INITIAL_CHECKS[room] ?? 0;
+function buildChecklist(localName: string): ChecklistItem[] {
+  const checkedCount = localName === "Bloc opératoire 01" ? 5 : 3;
   return CHECKLIST_LABELS.map((label, idx) => ({
     id: idx + 1,
     label,
-    checked: idx < preChecked,
-    comment: "",
+    checked: idx < checkedCount,
   }));
 }
 
-const DOE_ITEMS: DOEItem[] = [
-  {
-    document: "Plans architecturaux finaux",
-    responsable: "Architecte",
-    statut: "Reçu",
-    dateRemise: "01/06/2026",
-  },
-  {
-    document: "Plans exécution structure",
-    responsable: "SETAB",
-    statut: "Reçu",
-    dateRemise: "01/06/2026",
-  },
-  {
-    document: "Plans exécution CVC",
-    responsable: "ClimaMed",
-    statut: "En attente",
-    dateRemise: "15/06/2026",
-  },
-  {
-    document: "Plans fluides médicaux",
-    responsable: "MedFluides",
-    statut: "En attente",
-    dateRemise: "20/06/2026",
-  },
-  {
-    document: "Schémas électriques finaux",
-    responsable: "ElecPro",
-    statut: "En cours",
-    dateRemise: "10/06/2026",
-  },
-  {
-    document: "PV essais plomberie",
-    responsable: "MedFluides",
-    statut: "Reçu",
-    dateRemise: "25/05/2026",
-  },
-  {
-    document: "PV essais électricité",
-    responsable: "ElecPro",
-    statut: "En cours",
-    dateRemise: "15/06/2026",
-  },
-  {
-    document: "Notice SSI + PV réception SSI",
-    responsable: "SecuFire",
-    statut: "Non remis",
-    dateRemise: "30/06/2026",
-  },
-  {
-    document: "Certificats matériaux",
-    responsable: "SETAB",
-    statut: "Reçu",
-    dateRemise: "01/06/2026",
-  },
-  {
-    document: "Manuel maintenance CVC",
-    responsable: "ClimaMed",
-    statut: "Non remis",
-    dateRemise: "30/06/2026",
-  },
+const INITIAL_CHECKLISTS: Record<string, ChecklistItem[]> = Object.fromEntries(
+  LOCAL_LIST.map((name) => [name, buildChecklist(name)])
+);
+
+const DOE_DOCUMENTS: DOEDocument[] = [
+  { doc: "Plans architecturaux finaux", lot: "Architecture", statut: "remis", date: "15/05/2026" },
+  { doc: "Plans structure béton", lot: "GC", statut: "remis", date: "20/05/2026" },
+  { doc: "Plans CVC exécution", lot: "CVC", statut: "en_cours", date: "" },
+  { doc: "Plans électricité CFO", lot: "CFO", statut: "en_cours", date: "" },
+  { doc: "Plans fluides médicaux", lot: "Fluides", statut: "non_remis", date: "" },
+  { doc: "PV essais plomberie", lot: "Plomberie", statut: "remis", date: "22/06/2026" },
+  { doc: "Notices équipements CVC", lot: "CVC", statut: "non_remis", date: "" },
+  { doc: "Schémas électriques TGBT", lot: "CFO", statut: "non_remis", date: "" },
+  { doc: "Fiches techniques matériaux", lot: "GC", statut: "en_cours", date: "" },
+  { doc: "Plans courants faibles SSI/GTB", lot: "CFA", statut: "non_remis", date: "" },
+  { doc: "PV essais électricité", lot: "CFO", statut: "non_remis", date: "" },
+  { doc: "Rapport géotechnique final", lot: "GC", statut: "remis", date: "10/03/2026" },
 ];
 
-// ─── Helper components ────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-function EssaiStatutBadge({ statut }: { statut: EssaiStatut }) {
-  const map: Record<EssaiStatut, { label: string; className: string }> = {
-    conforme: {
-      label: "Conforme",
-      className: "bg-green-100 text-green-800 border-green-200",
-    },
-    non_conforme: {
-      label: "Non conforme",
-      className: "bg-red-100 text-red-800 border-red-200",
-    },
-    planifie: {
-      label: "Planifié",
-      className: "bg-blue-100 text-blue-800 border-blue-200",
-    },
-    non_planifie: {
-      label: "Non planifié",
-      className: "bg-gray-100 text-gray-600 border-gray-200",
-    },
-  };
-  const { label, className } = map[statut];
+function PhaseStepper() {
   return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${className}`}
-    >
-      {label}
-    </span>
+    <Card className="bg-white border border-slate-200 shadow-sm">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold text-slate-700">Avancement des phases</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-start overflow-x-auto pb-2">
+          {PHASES.map((phase, idx) => (
+            <div key={phase.label} className="flex items-start">
+              {/* Step node */}
+              <div className="flex flex-col items-center min-w-[100px] px-1">
+                {/* Circle */}
+                <div className="relative">
+                  {phase.status === "completed" && (
+                    <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center shadow-sm">
+                      <CheckCircle2 className="w-5 h-5 text-white" />
+                    </div>
+                  )}
+                  {phase.status === "in_progress" && (
+                    <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center shadow-sm ring-4 ring-blue-100">
+                      <Clock className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                  {phase.status === "not_started" && (
+                    <div className="w-9 h-9 rounded-full bg-slate-200 border-2 border-slate-300 flex items-center justify-center">
+                      <Circle className="w-4 h-4 text-slate-400" />
+                    </div>
+                  )}
+                </div>
+                {/* Label */}
+                <span
+                  className={`mt-2 text-[11px] font-medium text-center leading-tight max-w-[90px] ${
+                    phase.status === "in_progress"
+                      ? "text-blue-700"
+                      : phase.status === "completed"
+                      ? "text-green-700"
+                      : "text-slate-400"
+                  }`}
+                >
+                  {phase.label}
+                </span>
+                {/* Progress mini bar for in_progress */}
+                {phase.status === "in_progress" && (
+                  <div className="mt-1 w-16">
+                    <div className="w-full bg-blue-100 rounded-full h-1">
+                      <div
+                        className="bg-blue-500 h-1 rounded-full transition-all"
+                        style={{ width: `${phase.progress}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-blue-600 font-semibold">{phase.progress}%</span>
+                  </div>
+                )}
+              </div>
+              {/* Connector line */}
+              {idx < PHASES.length - 1 && (
+                <div
+                  className={`h-0.5 min-w-[24px] flex-1 mt-[18px] ${
+                    PHASES[idx + 1].status === "completed" || phase.status === "completed"
+                      ? "bg-green-300"
+                      : phase.status === "in_progress"
+                      ? "bg-gradient-to-r from-blue-300 to-slate-200"
+                      : "bg-slate-200"
+                  }`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-function DOEStatutBadge({ statut }: { statut: DOEItem["statut"] }) {
-  const map: Record<DOEItem["statut"], string> = {
-    Reçu: "bg-green-100 text-green-800 border-green-200",
-    "En cours": "bg-yellow-100 text-yellow-800 border-yellow-200",
-    "En attente": "bg-blue-100 text-blue-800 border-blue-200",
-    "Non remis": "bg-gray-100 text-gray-600 border-gray-200",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${map[statut]}`}
-    >
-      {statut}
-    </span>
-  );
-}
+function StatCards() {
+  const réalisés = ESSAIS_MOCK.filter((e) => e.statut === "réalisé").length;
+  const conformes = ESSAIS_MOCK.filter((e) => e.resultat === "conforme").length;
+  const nonConformes = ESSAIS_MOCK.filter((e) => e.resultat === "non_conforme").length;
+  const nonRéalisés = ESSAIS_MOCK.filter(
+    (e) => e.statut === "planifié" || e.statut === "non_planifié"
+  ).length;
+  const doeRemis = DOE_DOCUMENTS.filter((d) => d.statut === "remis").length;
+  const doeTotal = DOE_DOCUMENTS.length;
 
-function PhaseIcon({
-  status,
-  progress,
-}: {
-  status: string;
-  progress: number;
-}) {
-  if (status === "in_progress") {
-    return (
-      <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white shadow-md">
-        <Clock className="w-5 h-5" />
-      </div>
-    );
-  }
-  if (progress === 100) {
-    return (
-      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-500 text-white shadow-md">
-        <CheckCircle className="w-5 h-5" />
-      </div>
-    );
-  }
+  const stats = [
+    {
+      label: "Essais planifiés",
+      value: ESSAIS_MOCK.length,
+      sub: `${réalisés} réalisés`,
+      color: "text-blue-700",
+      bg: "bg-blue-50",
+      border: "border-blue-200",
+    },
+    {
+      label: "Conformes",
+      value: conformes,
+      sub: "résultats OK",
+      color: "text-green-700",
+      bg: "bg-green-50",
+      border: "border-green-200",
+    },
+    {
+      label: "Non conformes",
+      value: nonConformes,
+      sub: "à reprendre",
+      color: "text-red-700",
+      bg: "bg-red-50",
+      border: "border-red-200",
+    },
+    {
+      label: "Non réalisés",
+      value: nonRéalisés,
+      sub: "en attente",
+      color: "text-amber-700",
+      bg: "bg-amber-50",
+      border: "border-amber-200",
+    },
+    {
+      label: "Checklists locaux",
+      value: "48 locaux",
+      sub: "à valider",
+      color: "text-violet-700",
+      bg: "bg-violet-50",
+      border: "border-violet-200",
+    },
+    {
+      label: "DOE",
+      value: `${doeRemis}/${doeTotal}`,
+      sub: "documents remis",
+      color: "text-slate-700",
+      bg: "bg-slate-50",
+      border: "border-slate-200",
+    },
+  ];
+
   return (
-    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 text-gray-400">
-      <Circle className="w-5 h-5" />
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      {stats.map((s) => (
+        <Card key={s.label} className={`bg-white border ${s.border} shadow-sm`}>
+          <CardContent className="p-4">
+            <p className="text-xs text-slate-500 font-medium mb-1">{s.label}</p>
+            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">{s.sub}</p>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+function EssaiStatutBadge({ statut }: { statut: EssaiStatut }) {
+  if (statut === "réalisé") return <Badge variant="success">Réalisé</Badge>;
+  if (statut === "planifié") return <Badge variant="info">Planifié</Badge>;
+  return <Badge variant="secondary">Non planifié</Badge>;
+}
 
-export default function ReceptionPage() {
-  // Essais state
-  const [essais, setEssais] = useState<Essai[]>(ESSAIS_MOCK);
-  const [newEssaiOpen, setNewEssaiOpen] = useState(false);
-  const [newEssai, setNewEssai] = useState<Partial<Essai>>({});
+function EssaiResultatBadge({ resultat }: { resultat: EssaiResultat }) {
+  if (resultat === "conforme") return <Badge variant="success">Conforme</Badge>;
+  if (resultat === "non_conforme") return <Badge variant="destructive">Non conforme</Badge>;
+  return <span className="text-slate-400 text-xs">—</span>;
+}
 
-  // Checklist state — lazy-init per room
-  const [selectedRoom, setSelectedRoom] = useState<string>(ROOMS[0]);
-  const [checklists, setChecklists] = useState<Record<string, ChecklistItem[]>>(
-    () => {
-      const initial: Record<string, ChecklistItem[]> = {};
-      ROOMS.forEach((r) => {
-        initial[r] = buildChecklist(r);
-      });
-      return initial;
-    }
-  );
+function DOEStatutBadge({ statut }: { statut: DOEStatut }) {
+  if (statut === "remis") return <Badge variant="success">Remis</Badge>;
+  if (statut === "en_cours") return <Badge variant="warning">En cours</Badge>;
+  return <Badge variant="outline">Non remis</Badge>;
+}
 
-  const currentChecklist = checklists[selectedRoom] ?? [];
-  const checkedCount = currentChecklist.filter((i) => i.checked).length;
-  const checklistProgress = Math.round((checkedCount / 15) * 100);
+interface EssaisTabProps {
+  essais: Essai[];
+  onAdd: (e: Essai) => void;
+}
 
-  function toggleChecklistItem(roomName: string, itemId: number) {
-    setChecklists((prev) => ({
-      ...prev,
-      [roomName]: prev[roomName].map((item) =>
-        item.id === itemId ? { ...item, checked: !item.checked } : item
-      ),
-    }));
-  }
+function EssaisTab({ essais, onAdd }: EssaisTabProps) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<{
+    système: string;
+    zone: string;
+    type: string;
+    datePrevue: string;
+    responsable: string;
+  }>({ système: "", zone: "", type: "", datePrevue: "", responsable: "" });
 
-  function updateChecklistComment(
-    roomName: string,
-    itemId: number,
-    comment: string
-  ) {
-    setChecklists((prev) => ({
-      ...prev,
-      [roomName]: prev[roomName].map((item) =>
-        item.id === itemId ? { ...item, comment } : item
-      ),
-    }));
-  }
-
-  function handleAddEssai() {
-    if (!newEssai.systeme) return;
-    const entry: Essai = {
+  function handleSubmit() {
+    if (!form.système.trim()) return;
+    const newEntry: Essai = {
       id: essais.length + 1,
-      systeme: newEssai.systeme ?? "",
-      zone: newEssai.zone ?? "",
-      type: newEssai.type ?? "",
-      datePrevue: newEssai.datePrevue ?? "-",
-      dateReelle: "-",
-      responsable: newEssai.responsable ?? "",
-      resultat: "-",
-      statut: "non_planifie",
+      système: form.système,
+      zone: form.zone,
+      type: form.type,
+      datePrevue: form.datePrevue,
+      dateReelle: "",
+      responsable: form.responsable,
+      resultat: "",
+      pv: "",
+      statut: "planifié",
     };
-    setEssais((prev) => [...prev, entry]);
-    setNewEssai({});
-    setNewEssaiOpen(false);
+    onAdd(newEntry);
+    setForm({ système: "", zone: "", type: "", datePrevue: "", responsable: "" });
+    setOpen(false);
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Essais &amp; Réception OPR
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Suivi des essais techniques, checklists locaux et dossier des ouvrages
-          exécutés
-        </p>
-      </div>
-
-      {/* Phase progress tracker */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Avancement des phases</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-start gap-0 overflow-x-auto pb-2">
-            {PHASES.map((phase, idx) => (
-              <div key={phase.label} className="flex items-center">
-                {/* Step */}
-                <div className="flex flex-col items-center min-w-[110px]">
-                  <PhaseIcon
-                    status={phase.status}
-                    progress={phase.progress}
+    <Card className="bg-white border border-slate-200 shadow-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+            <FlaskConical className="w-4 h-4 text-blue-600" />
+            Liste des essais techniques
+          </CardTitle>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                <Plus className="w-4 h-4" />
+                Nouvel essai
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Ajouter un essai</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="système">Système</Label>
+                  <Input
+                    id="système"
+                    value={form.système}
+                    onChange={(e) => setForm((f) => ({ ...f, système: e.target.value }))}
+                    placeholder="Ex: EF/EC"
                   />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="zone">Zone</Label>
+                  <Input
+                    id="zone"
+                    value={form.zone}
+                    onChange={(e) => setForm((f) => ({ ...f, zone: e.target.value }))}
+                    placeholder="Ex: RDC Général"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="type">Type d'essai</Label>
+                  <Input
+                    id="type"
+                    value={form.type}
+                    onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+                    placeholder="Ex: Pression réseau"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="datePrevue">Date prévue</Label>
+                  <Input
+                    id="datePrevue"
+                    value={form.datePrevue}
+                    onChange={(e) => setForm((f) => ({ ...f, datePrevue: e.target.value }))}
+                    placeholder="JJ/MM/AAAA"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="responsable">Responsable</Label>
+                  <Input
+                    id="responsable"
+                    value={form.responsable}
+                    onChange={(e) => setForm((f) => ({ ...f, responsable: e.target.value }))}
+                    placeholder="Ex: R. Meziane"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setOpen(false)} className="flex-1">
+                    Annuler
+                  </Button>
+                  <button
+                    onClick={handleSubmit}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Enregistrer
+                  </button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50 border-b border-slate-200">
+                <TableHead className="text-xs font-semibold text-slate-600 py-3">Système</TableHead>
+                <TableHead className="text-xs font-semibold text-slate-600">Zone</TableHead>
+                <TableHead className="text-xs font-semibold text-slate-600">Type</TableHead>
+                <TableHead className="text-xs font-semibold text-slate-600 whitespace-nowrap">Date Prévue</TableHead>
+                <TableHead className="text-xs font-semibold text-slate-600 whitespace-nowrap">Date Réelle</TableHead>
+                <TableHead className="text-xs font-semibold text-slate-600">Responsable</TableHead>
+                <TableHead className="text-xs font-semibold text-slate-600">Résultat</TableHead>
+                <TableHead className="text-xs font-semibold text-slate-600">PV</TableHead>
+                <TableHead className="text-xs font-semibold text-slate-600">Statut</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {essais.map((e) => (
+                <TableRow key={e.id} className="hover:bg-slate-50 border-b border-slate-100">
+                  <TableCell className="text-sm font-medium text-slate-800">{e.système}</TableCell>
+                  <TableCell className="text-sm text-slate-600">{e.zone}</TableCell>
+                  <TableCell className="text-sm text-slate-600">{e.type}</TableCell>
+                  <TableCell className="text-sm text-slate-600 whitespace-nowrap">{e.datePrevue}</TableCell>
+                  <TableCell className="text-sm text-slate-600 whitespace-nowrap">
+                    {e.dateReelle || <span className="text-slate-300">—</span>}
+                  </TableCell>
+                  <TableCell className="text-sm text-slate-600">{e.responsable}</TableCell>
+                  <TableCell>
+                    <EssaiResultatBadge resultat={e.resultat} />
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {e.pv ? (
+                      <span className="inline-flex items-center gap-1 text-blue-600 font-medium text-xs">
+                        <FileText className="w-3 h-3" />
+                        {e.pv}
+                      </span>
+                    ) : (
+                      <span className="text-slate-300 text-xs">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <EssaiStatutBadge statut={e.statut} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface ChecklistsTabProps {
+  checklists: Record<string, ChecklistItem[]>;
+  selectedLocal: string;
+  onSelectLocal: (l: string) => void;
+  onToggle: (local: string, id: number) => void;
+}
+
+function ChecklistsTab({ checklists, selectedLocal, onSelectLocal, onToggle }: ChecklistsTabProps) {
+  const items = checklists[selectedLocal] ?? [];
+  const checkedCount = items.filter((i) => i.checked).length;
+  const progressPct = Math.round((checkedCount / items.length) * 100);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      {/* Local selector panel */}
+      <Card className="bg-white border border-slate-200 shadow-sm lg:col-span-1">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold text-slate-700">Sélectionner un local</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pb-3">
+          <div className="mb-3 px-2">
+            <Select value={selectedLocal} onValueChange={onSelectLocal}>
+              <SelectTrigger className="text-sm">
+                <SelectValue placeholder="Choisir un local" />
+              </SelectTrigger>
+              <SelectContent>
+                {LOCAL_LIST.map((name) => (
+                  <SelectItem key={name} value={name} className="text-sm">
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-0.5">
+            {LOCAL_LIST.map((name) => {
+              const localItems = checklists[name] ?? [];
+              const count = localItems.filter((i) => i.checked).length;
+              const pct = Math.round((count / localItems.length) * 100);
+              const isSelected = selectedLocal === name;
+              return (
+                <button
+                  key={name}
+                  onClick={() => onSelectLocal(name)}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors text-left ${
+                    isSelected
+                      ? "bg-blue-600 text-white"
+                      : "hover:bg-slate-100 text-slate-700"
+                  }`}
+                >
+                  <span className="truncate text-xs font-medium">{name}</span>
                   <span
-                    className={`mt-2 text-xs font-medium text-center leading-tight ${
-                      phase.status === "in_progress"
-                        ? "text-blue-700"
-                        : "text-gray-500"
+                    className={`ml-2 shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      isSelected
+                        ? "bg-white/20 text-white"
+                        : pct === 100
+                        ? "bg-green-100 text-green-700"
+                        : pct > 0
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-slate-100 text-slate-500"
                     }`}
                   >
-                    {phase.label}
+                    {count}/{localItems.length}
                   </span>
-                  {phase.status === "in_progress" && (
-                    <div className="mt-1 w-20">
-                      <div className="flex justify-between mb-0.5">
-                        <span className="text-[10px] text-blue-600 font-semibold">
-                          {phase.progress}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-blue-100 rounded-full h-1.5">
-                        <div
-                          className="bg-blue-600 h-1.5 rounded-full"
-                          style={{ width: `${phase.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  {phase.status === "not_started" && phase.progress === 0 && (
-                    <span className="mt-1 text-[10px] text-gray-400">
-                      Non démarré
-                    </span>
-                  )}
-                </div>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
-                {/* Connector line */}
-                {idx < PHASES.length - 1 && (
-                  <div className="flex-1 min-w-[16px] h-0.5 bg-gray-200 mb-10" />
+      {/* Checklist panel */}
+      <Card className="bg-white border border-slate-200 shadow-sm lg:col-span-3">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-blue-600" />
+              {selectedLocal}
+            </CardTitle>
+            <span className="text-xs text-slate-500 font-medium">
+              {checkedCount}/{items.length} validés
+            </span>
+          </div>
+          <div className="mt-2 space-y-1">
+            <Progress value={progressPct} className="h-2" />
+            <p className="text-[11px] text-slate-500">{progressPct}% complété</p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                  item.checked
+                    ? "bg-green-50 border-green-200"
+                    : "bg-white border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                <Checkbox
+                  id={`item-${selectedLocal}-${item.id}`}
+                  checked={item.checked}
+                  onCheckedChange={() => onToggle(selectedLocal, item.id)}
+                  className={item.checked ? "border-green-500 data-[state=checked]:bg-green-500" : ""}
+                />
+                <label
+                  htmlFor={`item-${selectedLocal}-${item.id}`}
+                  className={`text-sm cursor-pointer select-none flex-1 ${
+                    item.checked ? "text-green-800 line-through decoration-green-400" : "text-slate-700"
+                  }`}
+                >
+                  <span className="text-slate-400 text-xs mr-2 font-mono">
+                    {String(item.id).padStart(2, "0")}
+                  </span>
+                  {item.label}
+                </label>
+                {item.checked && (
+                  <Badge variant="success" className="text-[10px] px-1.5 py-0">
+                    OK
+                  </Badge>
                 )}
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
 
-      {/* Tabs */}
+function DOETab() {
+  const remis = DOE_DOCUMENTS.filter((d) => d.statut === "remis").length;
+  const total = DOE_DOCUMENTS.length;
+  const pct = Math.round((remis / total) * 100);
+
+  return (
+    <Card className="bg-white border border-slate-200 shadow-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <CardTitle className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+            <FolderOpen className="w-4 h-4 text-blue-600" />
+            Dossier des Ouvrages Exécutés (DOE)
+          </CardTitle>
+          <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            <Download className="w-4 h-4" />
+            Exporter
+          </button>
+        </div>
+        <div className="mt-3 space-y-1">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>Documents remis</span>
+            <span className="font-semibold text-slate-700">{remis} / {total}</span>
+          </div>
+          <Progress value={pct} className="h-2" />
+        </div>
+        <div className="flex flex-wrap gap-3 mt-3">
+          {(
+            [
+              { label: "Remis", statut: "remis", variant: "success" },
+              { label: "En cours", statut: "en_cours", variant: "warning" },
+              { label: "Non remis", statut: "non_remis", variant: "outline" },
+            ] as { label: string; statut: DOEStatut; variant: "success" | "warning" | "outline" }[]
+          ).map(({ label, statut, variant }) => (
+            <div key={statut} className="flex items-center gap-1.5">
+              <Badge variant={variant} className="text-xs">
+                {label}
+              </Badge>
+              <span className="text-xs text-slate-500 font-semibold">
+                {DOE_DOCUMENTS.filter((d) => d.statut === statut).length}
+              </span>
+            </div>
+          ))}
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50 border-b border-slate-200">
+                <TableHead className="text-xs font-semibold text-slate-600 py-3">Document</TableHead>
+                <TableHead className="text-xs font-semibold text-slate-600">Lot</TableHead>
+                <TableHead className="text-xs font-semibold text-slate-600">Statut</TableHead>
+                <TableHead className="text-xs font-semibold text-slate-600 whitespace-nowrap">Date remise</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {DOE_DOCUMENTS.map((d, idx) => (
+                <TableRow key={idx} className="hover:bg-slate-50 border-b border-slate-100">
+                  <TableCell className="text-sm font-medium text-slate-800">{d.doc}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="text-xs font-medium">
+                      {d.lot}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DOEStatutBadge statut={d.statut} />
+                  </TableCell>
+                  <TableCell className="text-sm text-slate-600 whitespace-nowrap">
+                    {d.date || <span className="text-slate-300">—</span>}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Main export ──────────────────────────────────────────────────────────────
+
+export default function ReceptionPage() {
+  const [essais, setEssais] = useState<Essai[]>(ESSAIS_MOCK);
+  const [checklists, setChecklists] = useState<Record<string, ChecklistItem[]>>(INITIAL_CHECKLISTS);
+  const [selectedLocal, setSelectedLocal] = useState<string>("Bloc opératoire 01");
+
+  function handleAddEssai(e: Essai) {
+    setEssais((prev) => [...prev, e]);
+  }
+
+  function handleToggleItem(local: string, id: number) {
+    setChecklists((prev) => ({
+      ...prev,
+      [local]: prev[local].map((item) =>
+        item.id === id ? { ...item, checked: !item.checked } : item
+      ),
+    }));
+  }
+
+  return (
+    <div className="p-4 lg:p-6 space-y-5">
+      {/* Page header */}
+      <div>
+        <h1 className="text-xl font-bold text-slate-900">Essais &amp; Réception OPR</h1>
+        <p className="text-sm text-slate-500 mt-0.5">
+          Suivi des essais techniques, checklists locaux et dossier des ouvrages exécutés
+        </p>
+      </div>
+
+      {/* Phase stepper */}
+      <PhaseStepper />
+
+      {/* Stat cards */}
+      <StatCards />
+
+      {/* Main tabs */}
       <Tabs defaultValue="essais">
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
-          <TabsTrigger value="essais">Essais</TabsTrigger>
-          <TabsTrigger value="checklists">Checklists Locaux</TabsTrigger>
-          <TabsTrigger value="doe">DOE</TabsTrigger>
+        <TabsList className="bg-slate-100 p-1 rounded-lg">
+          <TabsTrigger value="essais" className="text-sm font-medium">
+            Essais
+          </TabsTrigger>
+          <TabsTrigger value="checklists" className="text-sm font-medium">
+            Checklists Locaux
+          </TabsTrigger>
+          <TabsTrigger value="doe" className="text-sm font-medium">
+            DOE
+          </TabsTrigger>
         </TabsList>
 
-        {/* ── Tab: Essais ─────────────────────────────────────────── */}
         <TabsContent value="essais" className="mt-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-base">Essais techniques</CardTitle>
-              <Dialog open={newEssaiOpen} onOpenChange={setNewEssaiOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="gap-1.5">
-                    <Plus className="w-4 h-4" />
-                    Nouvel Essai
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle>Créer un nouvel essai</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right text-sm">Système</Label>
-                      <Input
-                        className="col-span-3"
-                        value={newEssai.systeme ?? ""}
-                        onChange={(e) =>
-                          setNewEssai((p) => ({
-                            ...p,
-                            systeme: e.target.value,
-                          }))
-                        }
-                        placeholder="Ex: Alimentation EF/EC"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right text-sm">Zone</Label>
-                      <Input
-                        className="col-span-3"
-                        value={newEssai.zone ?? ""}
-                        onChange={(e) =>
-                          setNewEssai((p) => ({ ...p, zone: e.target.value }))
-                        }
-                        placeholder="Ex: RDC + R+1"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right text-sm">Type</Label>
-                      <Input
-                        className="col-span-3"
-                        value={newEssai.type ?? ""}
-                        onChange={(e) =>
-                          setNewEssai((p) => ({ ...p, type: e.target.value }))
-                        }
-                        placeholder="Ex: Pression hydraulique"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right text-sm">Date prévue</Label>
-                      <Input
-                        className="col-span-3"
-                        value={newEssai.datePrevue ?? ""}
-                        onChange={(e) =>
-                          setNewEssai((p) => ({
-                            ...p,
-                            datePrevue: e.target.value,
-                          }))
-                        }
-                        placeholder="JJ/MM/AAAA"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right text-sm">Responsable</Label>
-                      <Input
-                        className="col-span-3"
-                        value={newEssai.responsable ?? ""}
-                        onChange={(e) =>
-                          setNewEssai((p) => ({
-                            ...p,
-                            responsable: e.target.value,
-                          }))
-                        }
-                        placeholder="Ex: MedFluides"
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2 pt-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => setNewEssaiOpen(false)}
-                      >
-                        Annuler
-                      </Button>
-                      <Button onClick={handleAddEssai}>Créer</Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50">
-                      <TableHead className="text-xs font-semibold">
-                        Système
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold">
-                        Zone
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold">
-                        Type
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold whitespace-nowrap">
-                        Date Prévue
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold whitespace-nowrap">
-                        Date Réelle
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold">
-                        Responsable
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold">
-                        Résultat
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold">
-                        Statut
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {essais.map((essai) => (
-                      <TableRow key={essai.id} className="hover:bg-gray-50">
-                        <TableCell className="font-medium text-sm">
-                          {essai.systeme}
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600">
-                          {essai.zone}
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600">
-                          {essai.type}
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600 whitespace-nowrap">
-                          {essai.datePrevue}
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600 whitespace-nowrap">
-                          {essai.dateReelle}
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600">
-                          {essai.responsable}
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600 max-w-[180px]">
-                          {essai.resultat}
-                        </TableCell>
-                        <TableCell>
-                          <EssaiStatutBadge statut={essai.statut} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Summary stats */}
-              <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
-                  Conformes :{" "}
-                  <strong>
-                    {essais.filter((e) => e.statut === "conforme").length}
-                  </strong>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
-                  Non conformes :{" "}
-                  <strong>
-                    {essais.filter((e) => e.statut === "non_conforme").length}
-                  </strong>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
-                  Planifiés :{" "}
-                  <strong>
-                    {essais.filter((e) => e.statut === "planifie").length}
-                  </strong>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block" />
-                  Non planifiés :{" "}
-                  <strong>
-                    {essais.filter((e) => e.statut === "non_planifie").length}
-                  </strong>
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+          <EssaisTab essais={essais} onAdd={handleAddEssai} />
         </TabsContent>
 
-        {/* ── Tab: Checklists Locaux ───────────────────────────────── */}
         <TabsContent value="checklists" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Checklists par local</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-6 md:flex-row md:gap-8">
-                {/* Room selector */}
-                <div className="md:w-56 shrink-0">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                    Sélectionner un local
-                  </p>
-                  <div className="flex flex-col gap-1">
-                    {ROOMS.map((room) => {
-                      const items = checklists[room] ?? [];
-                      const count = items.filter((i) => i.checked).length;
-                      const isSelected = selectedRoom === room;
-                      return (
-                        <button
-                          key={room}
-                          onClick={() => setSelectedRoom(room)}
-                          className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm text-left transition-colors ${
-                            isSelected
-                              ? "bg-blue-600 text-white font-medium"
-                              : "hover:bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          <span>{room}</span>
-                          <span
-                            className={`text-xs rounded-full px-1.5 py-0.5 font-semibold ${
-                              isSelected
-                                ? "bg-blue-500 text-white"
-                                : count === 15
-                                ? "bg-green-100 text-green-700"
-                                : count > 0
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-gray-100 text-gray-500"
-                            }`}
-                          >
-                            {count}/15
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Checklist panel */}
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold text-gray-800">
-                      {selectedRoom}
-                    </h3>
-                    <span className="text-sm text-gray-500">
-                      {checkedCount} / 15 points validés
-                    </span>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="mb-5">
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div
-                        className={`h-2.5 rounded-full transition-all ${
-                          checklistProgress === 100
-                            ? "bg-green-500"
-                            : checklistProgress > 0
-                            ? "bg-blue-500"
-                            : "bg-gray-300"
-                        }`}
-                        style={{ width: `${checklistProgress}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {checklistProgress}% complété
-                    </p>
-                  </div>
-
-                  {/* Items */}
-                  <div className="space-y-3">
-                    {currentChecklist.map((item) => (
-                      <div
-                        key={item.id}
-                        className={`rounded-lg border p-3 transition-colors ${
-                          item.checked
-                            ? "bg-green-50 border-green-200"
-                            : "bg-white border-gray-200"
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            id={`check-${selectedRoom}-${item.id}`}
-                            checked={item.checked}
-                            onChange={() =>
-                              toggleChecklistItem(selectedRoom, item.id)
-                            }
-                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 cursor-pointer accent-blue-600"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <label
-                              htmlFor={`check-${selectedRoom}-${item.id}`}
-                              className={`text-sm cursor-pointer select-none ${
-                                item.checked
-                                  ? "text-green-800 font-medium"
-                                  : "text-gray-700"
-                              }`}
-                            >
-                              <span className="text-gray-400 text-xs mr-1.5">
-                                {String(item.id).padStart(2, "0")}
-                              </span>
-                              {item.label}
-                            </label>
-                            {/* Optional comment */}
-                            <input
-                              type="text"
-                              placeholder="Commentaire (optionnel)..."
-                              value={item.comment}
-                              onChange={(e) =>
-                                updateChecklistComment(
-                                  selectedRoom,
-                                  item.id,
-                                  e.target.value
-                                )
-                              }
-                              className="mt-1.5 w-full text-xs border border-gray-200 rounded px-2 py-1 text-gray-600 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-300"
-                            />
-                          </div>
-                          {item.checked && (
-                            <Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ChecklistsTab
+            checklists={checklists}
+            selectedLocal={selectedLocal}
+            onSelectLocal={setSelectedLocal}
+            onToggle={handleToggleItem}
+          />
         </TabsContent>
 
-        {/* ── Tab: DOE ─────────────────────────────────────────────── */}
         <TabsContent value="doe" className="mt-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-base">
-                Dossier des Ouvrages Exécutés (DOE)
-              </CardTitle>
-              <div className="flex gap-2 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-                  Reçu :{" "}
-                  <strong className="ml-0.5">
-                    {DOE_ITEMS.filter((d) => d.statut === "Reçu").length}
-                  </strong>
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
-                  En cours :{" "}
-                  <strong className="ml-0.5">
-                    {DOE_ITEMS.filter((d) => d.statut === "En cours").length}
-                  </strong>
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
-                  En attente :{" "}
-                  <strong className="ml-0.5">
-                    {DOE_ITEMS.filter((d) => d.statut === "En attente").length}
-                  </strong>
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-gray-300 inline-block" />
-                  Non remis :{" "}
-                  <strong className="ml-0.5">
-                    {DOE_ITEMS.filter((d) => d.statut === "Non remis").length}
-                  </strong>
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Global DOE progress */}
-              <div className="mb-5">
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Documents reçus</span>
-                  <span className="font-semibold text-gray-800">
-                    {DOE_ITEMS.filter((d) => d.statut === "Reçu").length} /{" "}
-                    {DOE_ITEMS.length}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-500 h-2 rounded-full"
-                    style={{
-                      width: `${
-                        (DOE_ITEMS.filter((d) => d.statut === "Reçu").length /
-                          DOE_ITEMS.length) *
-                        100
-                      }%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50">
-                      <TableHead className="text-xs font-semibold">
-                        <div className="flex items-center gap-1.5">
-                          <FileText className="w-3.5 h-3.5" />
-                          Document
-                        </div>
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold">
-                        Responsable
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold">
-                        Statut
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold whitespace-nowrap">
-                        Date remise prévue
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {DOE_ITEMS.map((item, idx) => (
-                      <TableRow key={idx} className="hover:bg-gray-50">
-                        <TableCell className="font-medium text-sm">
-                          {item.document}
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600">
-                          {item.responsable}
-                        </TableCell>
-                        <TableCell>
-                          <DOEStatutBadge statut={item.statut} />
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600 whitespace-nowrap">
-                          {item.dateRemise}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          <DOETab />
         </TabsContent>
       </Tabs>
     </div>

@@ -3,578 +3,651 @@
 import { useState } from "react"
 import {
   MapPin,
-  Filter,
-  X,
-  Check,
-  AlertTriangle,
-  ChevronRight,
   Building2,
-  Layers,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  ChevronRight,
+  Zap,
+  Wifi,
+  Wind,
+  Droplets,
+  FlaskConical,
+  ShieldAlert,
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────────
 
-type RoomStatus = "not_started" | "in_progress" | "finished" | "delivered"
-type FloorCode = "RDC" | "R+1" | "SS"
+type RoomStatus =
+  | "non_commence"
+  | "en_travaux"
+  | "termine_brut"
+  | "finitions"
+  | "validation_technique"
+  | "pret_reception"
+  | "livre"
 
-interface TradeStatus {
+type MEPNeeds = {
   cfo: boolean
+  cfa: boolean
   cvc: boolean
-  plb: boolean
+  plomberie: boolean
+  fluides: boolean
   ssi: boolean
-  flu: boolean
 }
 
-interface RoomData {
+type Room = {
   id: string
   code: string
   name: string
-  area_sqm: number
-  functional_use: string
+  area: number
   status: RoomStatus
   progress: number
-  trades: TradeStatus
-  pending_items: string[]
+  needs: MEPNeeds
+  done: MEPNeeds
+  reservations: number
+  equipment: number
   notes?: string
 }
 
-interface ZoneData {
+type Zone = {
   id: string
   code: string
   name: string
-  floor: FloorCode
-  area_sqm: number
-  functional_type: string
-  progress: number
+  floor: string
+  area: number
   status: RoomStatus
-  rooms: RoomData[]
+  progress: number
+  rooms: Room[]
 }
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+// ─── Mock Data ─────────────────────────────────────────────────────────────────
 
-const ZONES: ZoneData[] = [
+const defaultNeeds = (): MEPNeeds => ({
+  cfo: false,
+  cfa: false,
+  cvc: false,
+  plomberie: false,
+  fluides: false,
+  ssi: false,
+})
+
+const defaultDone = (): MEPNeeds => ({
+  cfo: false,
+  cfa: false,
+  cvc: false,
+  plomberie: false,
+  fluides: false,
+  ssi: false,
+})
+
+const zones: Zone[] = [
   {
-    id: "Z01", code: "Z01", name: "Accueil / Administration", floor: "RDC",
-    area_sqm: 420, functional_type: "Administration", progress: 55, status: "in_progress",
+    id: "z01",
+    code: "Z01",
+    name: "Accueil / Administration",
+    floor: "RDC",
+    area: 680,
+    status: "finitions",
+    progress: 65,
     rooms: [
       {
-        id: "R01", code: "Z01-01", name: "Hall d'accueil", area_sqm: 80, functional_use: "Accueil public",
-        status: "in_progress", progress: 70,
-        trades: { cfo: true, cvc: true, plb: false, ssi: true, flu: false },
-        pending_items: ["Plomberie: points d'eau à compléter", "Fluides: non applicable"],
+        id: "b001", code: "B001", name: "Hall d'accueil", area: 120, status: "finitions", progress: 70,
+        needs: { ...defaultNeeds(), cfo: true, cfa: true, cvc: true },
+        done: { ...defaultDone(), cfo: true, cfa: true },
+        reservations: 1, equipment: 3,
+        notes: "Revêtement sol en cours de pose.",
       },
       {
-        id: "R02", code: "Z01-02", name: "Secrétariat médical", area_sqm: 35, functional_use: "Administration",
-        status: "in_progress", progress: 60,
-        trades: { cfo: true, cvc: true, plb: true, ssi: false, flu: false },
-        pending_items: ["SSI: pose détecteurs en attente"],
+        id: "b002", code: "B002", name: "Bureau admission", area: 25, status: "finitions", progress: 75,
+        needs: { ...defaultNeeds(), cfo: true, cfa: true },
+        done: { ...defaultDone(), cfo: true, cfa: true },
+        reservations: 0, equipment: 2,
       },
       {
-        id: "R03", code: "Z01-03", name: "Salle d'attente", area_sqm: 55, functional_use: "Attente patients",
-        status: "in_progress", progress: 65,
-        trades: { cfo: true, cvc: true, plb: false, ssi: false, flu: false },
-        pending_items: ["Plomberie: non prévu", "SSI: câblage en cours"],
+        id: "b003", code: "B003", name: "Salle d'attente", area: 80, status: "en_travaux", progress: 50,
+        needs: { ...defaultNeeds(), cfo: true, cvc: true },
+        done: { ...defaultDone(), cfo: true },
+        reservations: 2, equipment: 0,
+        notes: "Cloisons en cours.",
       },
       {
-        id: "R04", code: "Z01-04", name: "Bureau directeur médical", area_sqm: 25, functional_use: "Direction",
-        status: "finished", progress: 100,
-        trades: { cfo: true, cvc: true, plb: true, ssi: true, flu: false },
-        pending_items: [],
+        id: "b004", code: "B004", name: "Bureau direction", area: 30, status: "pret_reception", progress: 90,
+        needs: { ...defaultNeeds(), cfo: true, cfa: true, cvc: true },
+        done: { ...defaultDone(), cfo: true, cfa: true, cvc: true },
+        reservations: 0, equipment: 4,
       },
       {
-        id: "R05", code: "Z01-05", name: "Salle de réunion", area_sqm: 40, functional_use: "Réunion",
-        status: "in_progress", progress: 50,
-        trades: { cfo: true, cvc: false, plb: false, ssi: false, flu: false },
-        pending_items: ["CVC: gaines en attente de passage", "Plomberie: non prévu", "SSI: non démarré"],
+        id: "b005", code: "B005", name: "Secrétariat", area: 20, status: "finitions", progress: 80,
+        needs: { ...defaultNeeds(), cfo: true, cfa: true },
+        done: { ...defaultDone(), cfo: true, cfa: true },
+        reservations: 0, equipment: 3,
       },
       {
-        id: "R06", code: "Z01-06", name: "Sanitaires RDC", area_sqm: 18, functional_use: "Sanitaires",
-        status: "not_started", progress: 0,
-        trades: { cfo: false, cvc: false, plb: false, ssi: false, flu: false },
-        pending_items: ["Tous les corps d'état: non démarrés"],
+        id: "b006", code: "B006", name: "Salle réunion admin", area: 35, status: "termine_brut", progress: 40,
+        needs: { ...defaultNeeds(), cfo: true, cvc: true },
+        done: { ...defaultDone(), cfo: false },
+        reservations: 1, equipment: 0,
       },
     ],
   },
   {
-    id: "Z02", code: "Z02", name: "Urgences", floor: "RDC",
-    area_sqm: 320, functional_type: "Urgences médicales", progress: 30, status: "in_progress",
+    id: "z02",
+    code: "Z02",
+    name: "Urgences",
+    floor: "RDC",
+    area: 420,
+    status: "en_travaux",
+    progress: 35,
     rooms: [
       {
-        id: "R07", code: "Z02-01", name: "Box urgences n°1", area_sqm: 20, functional_use: "Soins urgence",
-        status: "in_progress", progress: 35,
-        trades: { cfo: true, cvc: false, plb: false, ssi: false, flu: false },
-        pending_items: ["CVC: en attente LOT-CVC", "Plomberie: réservations faites", "SSI: non démarré", "Fluides: O2 + vide en attente"],
-        notes: "Zone critique — fluides médicaux obligatoires",
+        id: "u001", code: "U001", name: "Box urgences 1", area: 18, status: "en_travaux", progress: 30,
+        needs: { ...defaultNeeds(), cfo: true, cfa: true, cvc: true, plomberie: true, fluides: true },
+        done: { ...defaultDone(), cfo: false },
+        reservations: 2, equipment: 1,
+        notes: "Réseau fluides médicaux en attente.",
       },
       {
-        id: "R08", code: "Z02-02", name: "Box urgences n°2", area_sqm: 20, functional_use: "Soins urgence",
-        status: "in_progress", progress: 35,
-        trades: { cfo: true, cvc: false, plb: false, ssi: false, flu: false },
-        pending_items: ["CVC: en attente LOT-CVC", "Plomberie: réservations faites", "SSI: non démarré", "Fluides: O2 + vide en attente"],
+        id: "u002", code: "U002", name: "Box urgences 2", area: 18, status: "en_travaux", progress: 30,
+        needs: { ...defaultNeeds(), cfo: true, cfa: true, cvc: true, plomberie: true, fluides: true },
+        done: { ...defaultDone(), cfo: false },
+        reservations: 2, equipment: 1,
       },
       {
-        id: "R09", code: "Z02-03", name: "Salle de déchocage", area_sqm: 35, functional_use: "Déchocage",
-        status: "not_started", progress: 0,
-        trades: { cfo: false, cvc: false, plb: false, ssi: false, flu: false },
-        pending_items: ["Tous les corps d'état: non démarrés"],
-        notes: "Priorité absolue — chemin critique",
+        id: "u003", code: "U003", name: "Salle déchocage", area: 40, status: "en_travaux", progress: 25,
+        needs: { ...defaultNeeds(), cfo: true, cfa: true, cvc: true, plomberie: true, fluides: true, ssi: true },
+        done: { ...defaultDone() },
+        reservations: 3, equipment: 2,
+        notes: "Zone critique — toutes MEP requises.",
       },
     ],
   },
   {
-    id: "Z03", code: "Z03", name: "Bloc Césarienne", floor: "R+1",
-    area_sqm: 280, functional_type: "Bloc opératoire", progress: 15, status: "in_progress",
+    id: "z03",
+    code: "Z03",
+    name: "Bloc Césarienne",
+    floor: "R+1",
+    area: 280,
+    status: "en_travaux",
+    progress: 20,
     rooms: [
       {
-        id: "R10", code: "Z03-01", name: "Salle opératoire principale", area_sqm: 42, functional_use: "Chirurgie",
-        status: "in_progress", progress: 15,
-        trades: { cfo: true, cvc: false, plb: false, ssi: false, flu: false },
-        pending_items: ["CVC: réseau bloqué (LOT-FLU)", "Plomberie: en cours", "SSI: non démarré", "Fluides: O2 + vide + air med. obligatoires"],
-        notes: "Zone ultra-critique — validation ADE obligatoire",
+        id: "bl001", code: "BL001", name: "Salle opératoire", area: 55, status: "en_travaux", progress: 20,
+        needs: { cfo: true, cfa: true, cvc: true, plomberie: true, fluides: true, ssi: true },
+        done: { ...defaultDone() },
+        reservations: 4, equipment: 0,
+        notes: "Toutes corps d'état requis. Priorité absolue.",
       },
       {
-        id: "R11", code: "Z03-02", name: "Salle de réveil (SSPI)", area_sqm: 30, functional_use: "Post-op",
-        status: "in_progress", progress: 10,
-        trades: { cfo: true, cvc: false, plb: false, ssi: false, flu: false },
-        pending_items: ["CVC: ventilation SSPI bloquée", "Fluides: 4 prises O2 prévues"],
+        id: "bl002", code: "BL002", name: "SSPI", area: 35, status: "non_commence", progress: 0,
+        needs: { ...defaultNeeds(), cfo: true, cvc: true, fluides: true },
+        done: { ...defaultDone() },
+        reservations: 0, equipment: 0,
       },
       {
-        id: "R12", code: "Z03-03", name: "Sas lavage chirurgical", area_sqm: 12, functional_use: "Préparation",
-        status: "not_started", progress: 0,
-        trades: { cfo: false, cvc: false, plb: false, ssi: false, flu: false },
-        pending_items: ["Tous corps d'état: non démarrés"],
+        id: "bl003", code: "BL003", name: "Salle réveil", area: 30, status: "non_commence", progress: 0,
+        needs: { ...defaultNeeds(), cfo: true, cvc: true, fluides: true },
+        done: { ...defaultDone() },
+        reservations: 0, equipment: 0,
       },
     ],
   },
   {
-    id: "Z04", code: "Z04", name: "Hospitalisation", floor: "R+1",
-    area_sqm: 560, functional_type: "Hébergement patients", progress: 40, status: "in_progress",
+    id: "z04",
+    code: "Z04",
+    name: "Hospitalisation",
+    floor: "R+1",
+    area: 480,
+    status: "finitions",
+    progress: 55,
     rooms: [
       {
-        id: "R13", code: "Z04-01", name: "Chambre double A", area_sqm: 28, functional_use: "Hospitalisation",
-        status: "in_progress", progress: 50,
-        trades: { cfo: true, cvc: true, plb: true, ssi: false, flu: false },
-        pending_items: ["SSI: câblage non démarré", "Fluides: O2 mural en attente"],
+        id: "h001", code: "H001", name: "Chambre 101", area: 22, status: "finitions", progress: 60,
+        needs: { ...defaultNeeds(), cfo: true, cfa: true, cvc: true, fluides: true },
+        done: { ...defaultDone(), cfo: true, cfa: true },
+        reservations: 1, equipment: 2,
       },
       {
-        id: "R14", code: "Z04-02", name: "Chambre simple B", area_sqm: 18, functional_use: "Hospitalisation",
-        status: "in_progress", progress: 55,
-        trades: { cfo: true, cvc: true, plb: true, ssi: true, flu: false },
-        pending_items: ["Fluides: O2 mural en attente"],
+        id: "h002", code: "H002", name: "Chambre 102", area: 22, status: "finitions", progress: 60,
+        needs: { ...defaultNeeds(), cfo: true, cfa: true, cvc: true, fluides: true },
+        done: { ...defaultDone(), cfo: true, cfa: true },
+        reservations: 1, equipment: 2,
       },
     ],
   },
   {
-    id: "Z05", code: "Z05", name: "Locaux Techniques", floor: "SS",
-    area_sqm: 450, functional_type: "Technique MEP", progress: 65, status: "in_progress",
+    id: "z05",
+    code: "Z05",
+    name: "Locaux Techniques",
+    floor: "SS",
+    area: 450,
+    status: "pret_reception",
+    progress: 70,
     rooms: [
       {
-        id: "R15", code: "Z05-01", name: "Chaufferie / Centrale CVC", area_sqm: 120, functional_use: "Technique",
-        status: "in_progress", progress: 65,
-        trades: { cfo: true, cvc: true, plb: true, ssi: true, flu: false },
-        pending_items: ["Fluides: centrale O2 en cours d'installation"],
-        notes: "Centrale technique principale",
+        id: "t001", code: "T001", name: "Local CTA", area: 80, status: "pret_reception", progress: 85,
+        needs: { ...defaultNeeds(), cfo: true, cvc: true },
+        done: { ...defaultDone(), cfo: true, cvc: true },
+        reservations: 0, equipment: 5,
+        notes: "Centrale de traitement d'air installée.",
       },
     ],
   },
 ]
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 
-function roomStatusLabel(s: RoomStatus): string {
-  return { not_started: "Non démarré", in_progress: "En cours", finished: "Terminé", delivered: "Livré" }[s]
+function getStatusConfig(status: RoomStatus) {
+  switch (status) {
+    case "non_commence":
+      return { label: "Non commencé", className: "bg-gray-100 text-gray-700 border-0" }
+    case "en_travaux":
+      return { label: "En travaux", className: "bg-yellow-100 text-yellow-800 border-0" }
+    case "termine_brut":
+      return { label: "Terminé brut", className: "bg-orange-100 text-orange-800 border-0" }
+    case "finitions":
+      return { label: "Finitions", className: "bg-blue-100 text-blue-800 border-0" }
+    case "validation_technique":
+      return { label: "Validation technique", className: "bg-purple-100 text-purple-800 border-0" }
+    case "pret_reception":
+      return { label: "Prêt réception", className: "bg-green-100 text-green-800 border-0" }
+    case "livre":
+      return { label: "Livré", className: "bg-emerald-100 text-emerald-800 border-0" }
+  }
 }
 
-function roomStatusColor(s: RoomStatus): string {
-  return {
-    not_started: "bg-gray-100 text-gray-600 border-gray-200",
-    in_progress: "bg-blue-50 text-blue-700 border-blue-200",
-    finished: "bg-green-50 text-green-700 border-green-200",
-    delivered: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  }[s]
+function getProgressColor(status: RoomStatus) {
+  switch (status) {
+    case "non_commence": return "bg-gray-300"
+    case "en_travaux": return "bg-yellow-400"
+    case "termine_brut": return "bg-orange-400"
+    case "finitions": return "bg-blue-400"
+    case "validation_technique": return "bg-purple-400"
+    case "pret_reception": return "bg-green-400"
+    case "livre": return "bg-emerald-500"
+  }
 }
 
-function roomCardBorder(s: RoomStatus): string {
-  return {
-    not_started: "border-l-gray-300",
-    in_progress: "border-l-blue-500",
-    finished: "border-l-green-500",
-    delivered: "border-l-emerald-500",
-  }[s]
-}
+const MEP_ITEMS: { key: keyof MEPNeeds; label: string; Icon: React.ElementType }[] = [
+  { key: "cfo", label: "CFO", Icon: Zap },
+  { key: "cfa", label: "CFA", Icon: Wifi },
+  { key: "cvc", label: "CVC", Icon: Wind },
+  { key: "plomberie", label: "Plom", Icon: Droplets },
+  { key: "fluides", label: "Fluides", Icon: FlaskConical },
+  { key: "ssi", label: "SSI", Icon: ShieldAlert },
+]
 
-function progressColor(p: number): string {
-  if (p >= 80) return "bg-green-500"
-  if (p >= 50) return "bg-blue-500"
-  if (p >= 20) return "bg-amber-500"
-  return "bg-gray-300"
-}
-
-const TRADE_LABELS: Record<keyof TradeStatus, string> = {
-  cfo: "CFO",
-  cvc: "CVC",
-  plb: "Plomb.",
-  ssi: "SSI",
-  flu: "Fluides",
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function ZoneSummaryCard({ zone, selected, onClick }: {
-  zone: ZoneData
-  selected: boolean
-  onClick: () => void
-}) {
-  const alertCount = zone.rooms.filter(r => r.status === "not_started" || r.pending_items.length > 0).length
+function MEPChecklist({ needs, done }: { needs: MEPNeeds; done: MEPNeeds }) {
   return (
-    <button
-      onClick={onClick}
-      className={`text-left w-full border rounded-xl p-4 transition-all ${
-        selected
-          ? "border-blue-500 bg-blue-50 shadow-sm ring-1 ring-blue-500"
-          : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div>
-          <span className="text-xs font-mono text-slate-400">{zone.code}</span>
-          <h3 className="text-sm font-semibold text-slate-800 leading-tight mt-0.5">{zone.name}</h3>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <span className={`text-xs rounded-md px-1.5 py-0.5 border font-medium ${roomStatusColor(zone.status)}`}>
-            {roomStatusLabel(zone.status)}
-          </span>
-          {alertCount > 0 && (
-            <span className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
-              ⚠ {alertCount}
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {MEP_ITEMS.map(({ key, label, Icon }) => {
+        if (!needs[key]) {
+          return (
+            <span key={key} className="flex items-center gap-0.5 text-xs text-slate-300 px-1.5 py-0.5 rounded bg-slate-50 border border-slate-100">
+              <Icon className="w-3 h-3" />
+              <span>{label}</span>
             </span>
-          )}
-        </div>
-      </div>
-      <div className="flex items-center gap-2 text-xs text-slate-500 mb-3">
-        <Layers className="w-3 h-3" />
-        <span>{zone.floor}</span>
-        <span>·</span>
-        <span>{zone.area_sqm} m²</span>
-        <span>·</span>
-        <span>{zone.rooms.length} locaux</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <div className="flex-1 bg-slate-100 rounded-full h-2">
-          <div
-            className={`${progressColor(zone.progress)} h-2 rounded-full transition-all`}
-            style={{ width: `${zone.progress}%` }}
-          />
-        </div>
-        <span className={`text-xs font-semibold ${selected ? "text-blue-700" : "text-slate-600"}`}>
-          {zone.progress}%
-        </span>
-      </div>
-    </button>
-  )
-}
-
-function TradeChip({ label, done }: { label: string; done: boolean }) {
-  return (
-    <div className={`flex items-center gap-1 text-xs px-1.5 py-0.5 rounded border font-medium ${
-      done
-        ? "bg-green-50 text-green-700 border-green-200"
-        : "bg-gray-50 text-gray-500 border-gray-200"
-    }`}>
-      {done
-        ? <Check className="w-3 h-3" />
-        : <X className="w-3 h-3" />}
-      {label}
+          )
+        }
+        return (
+          <span
+            key={key}
+            className={`flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded border ${
+              done[key]
+                ? "bg-green-50 text-green-700 border-green-200"
+                : "bg-red-50 text-red-600 border-red-200"
+            }`}
+          >
+            {done[key] ? (
+              <CheckCircle2 className="w-3 h-3" />
+            ) : (
+              <XCircle className="w-3 h-3" />
+            )}
+            <span>{label}</span>
+          </span>
+        )
+      })}
     </div>
   )
 }
 
-function RoomDetailModal({ room, onClose }: { room: RoomData | null; onClose: () => void }) {
-  if (!room) return null
+// ─── Room Detail Modal ─────────────────────────────────────────────────────────
+
+function RoomDetailModal({ room, zone, onClose }: { room: Room | null; zone: Zone | null; onClose: () => void }) {
+  if (!room || !zone) return null
+  const statusCfg = getStatusConfig(room.status)
   return (
-    <Dialog open={!!room} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg">
+    <Dialog open={!!room} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span className="font-mono text-sm text-slate-500">{room.code}</span>
-            <span>{room.name}</span>
+          <DialogTitle className="flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-base">{room.code}</span>
+            <span className="text-slate-700">{room.name}</span>
+            <Badge className={statusCfg.className}>{statusCfg.label}</Badge>
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          {/* Status + progress */}
-          <div className="flex items-center justify-between">
-            <span className={`text-xs rounded-md px-2 py-1 border font-medium ${roomStatusColor(room.status)}`}>
-              {roomStatusLabel(room.status)}
-            </span>
-            <div className="flex items-center gap-2">
-              <div className="w-32 bg-slate-100 rounded-full h-2">
-                <div
-                  className={`${progressColor(room.progress)} h-2 rounded-full`}
-                  style={{ width: `${room.progress}%` }}
-                />
+        <div className="space-y-5">
+          {/* Info grid */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "Zone", value: `${zone.code} — ${zone.name}` },
+              { label: "Niveau", value: zone.floor },
+              { label: "Surface", value: `${room.area} m²` },
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-slate-50 rounded-lg p-3">
+                <p className="text-xs text-slate-500 mb-0.5">{label}</p>
+                <p className="text-sm font-semibold text-slate-800">{value}</p>
               </div>
-              <span className="text-sm font-semibold text-slate-700">{room.progress}%</span>
-            </div>
+            ))}
           </div>
 
-          {/* Info */}
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="bg-slate-50 rounded-lg p-3">
-              <p className="text-slate-500 mb-1">Surface</p>
-              <p className="font-semibold text-slate-800">{room.area_sqm} m²</p>
-            </div>
-            <div className="bg-slate-50 rounded-lg p-3">
-              <p className="text-slate-500 mb-1">Usage fonctionnel</p>
-              <p className="font-semibold text-slate-800">{room.functional_use}</p>
-            </div>
-          </div>
-
-          {/* Trades */}
+          {/* Progress */}
           <div>
-            <p className="text-xs font-semibold text-slate-700 mb-2">Corps d&apos;état</p>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(room.trades) as (keyof TradeStatus)[]).map(t => (
-                <TradeChip key={t} label={TRADE_LABELS[t]} done={room.trades[t]} />
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-sm font-semibold text-slate-700">Avancement</p>
+              <span className="text-sm font-bold text-slate-800">{room.progress}%</span>
+            </div>
+            <div className="relative h-3 w-full overflow-hidden rounded-full bg-slate-100">
+              <div
+                className={`h-full rounded-full transition-all ${getProgressColor(room.status)}`}
+                style={{ width: `${room.progress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* MEP Checklist detail */}
+          <div>
+            <p className="text-sm font-semibold text-slate-700 mb-2">Corps d'état (MEP)</p>
+            <div className="divide-y divide-slate-100 rounded-lg border border-slate-200 overflow-hidden">
+              {MEP_ITEMS.map(({ key, label, Icon }) => (
+                <div key={key} className={`flex items-center justify-between px-3 py-2 ${!room.needs[key] ? "opacity-40" : ""}`}>
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm text-slate-700">{label}</span>
+                  </div>
+                  {!room.needs[key] ? (
+                    <span className="text-xs text-slate-400">Non requis</span>
+                  ) : room.done[key] ? (
+                    <span className="flex items-center gap-1 text-xs font-semibold text-green-700">
+                      <CheckCircle2 className="w-4 h-4" />Terminé
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-xs font-semibold text-red-600">
+                      <XCircle className="w-4 h-4" />En attente
+                    </span>
+                  )}
+                </div>
               ))}
             </div>
           </div>
 
-          {/* Pending items */}
-          {room.pending_items.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                Points en attente ({room.pending_items.length})
-              </p>
-              <ul className="space-y-1.5">
-                {room.pending_items.map((item, i) => (
-                  <li key={i} className="text-xs text-slate-600 flex items-start gap-2 bg-amber-50 rounded p-2 border border-amber-100">
-                    <span className="text-amber-500 mt-0.5">•</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+          {/* Badges row */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold ${room.reservations > 0 ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
+              <AlertCircle className="w-4 h-4" />
+              {room.reservations} réserve{room.reservations !== 1 ? "s" : ""}
             </div>
-          )}
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold ${room.equipment > 0 ? "bg-purple-50 text-purple-700" : "bg-slate-50 text-slate-500"}`}>
+              <Building2 className="w-4 h-4" />
+              {room.equipment} équipement{room.equipment !== 1 ? "s" : ""}
+            </div>
+          </div>
 
           {/* Notes */}
           {room.notes && (
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-              <p className="text-xs font-semibold text-blue-700 mb-1">Note</p>
-              <p className="text-xs text-blue-800">{room.notes}</p>
+            <div>
+              <p className="text-sm font-semibold text-slate-700 mb-1">Notes</p>
+              <p className="text-sm text-slate-600 bg-amber-50 border border-amber-200 rounded-lg p-3">{room.notes}</p>
             </div>
           )}
         </div>
+        <DialogFooter className="mt-4 gap-2">
+          <Button variant="outline" onClick={onClose}>Fermer</Button>
+          <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">Ajouter une réserve</Button>
+          <Button className="bg-slate-800 hover:bg-slate-900 text-white">Modifier le statut</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Room Card ─────────────────────────────────────────────────────────────────
+
+function RoomCard({ room, zone, onSelect }: { room: Room; zone: Zone; onSelect: () => void }) {
+  const statusCfg = getStatusConfig(room.status)
+  const progressColor = getProgressColor(room.status)
+
+  return (
+    <Card
+      className="shadow-sm border-slate-200 cursor-pointer hover:shadow-md hover:border-slate-300 transition-all"
+      onClick={onSelect}
+    >
+      <CardContent className="p-4 space-y-3">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{room.code}</span>
+            <p className="text-sm font-semibold text-slate-800 mt-1 leading-tight">{room.name}</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0 mt-1" />
+        </div>
+
+        {/* Area + floor */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
+            {room.area} m²
+          </span>
+          <span className="text-xs text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
+            {zone.floor}
+          </span>
+        </div>
+
+        {/* Progress */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-slate-500">Avancement</span>
+            <span className="text-xs font-bold text-slate-700">{room.progress}%</span>
+          </div>
+          <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className={`h-full rounded-full ${progressColor}`}
+              style={{ width: `${room.progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Status badge */}
+        <Badge className={`${statusCfg.className} text-xs`}>{statusCfg.label}</Badge>
+
+        {/* MEP icons */}
+        <MEPChecklist needs={room.needs} done={room.done} />
+
+        {/* Reservations + equipment */}
+        <div className="flex items-center gap-2 pt-1">
+          {room.reservations > 0 && (
+            <span className="text-xs font-semibold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+              {room.reservations} réserve{room.reservations !== 1 ? "s" : ""}
+            </span>
+          )}
+          {room.equipment > 0 && (
+            <span className="text-xs font-semibold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+              {room.equipment} équip.
+            </span>
+          )}
+          {room.reservations === 0 && room.equipment === 0 && (
+            <span className="text-xs text-slate-400">—</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ZonesPage() {
-  const [selectedZoneId, setSelectedZoneId] = useState<string>("Z01")
-  const [selectedRoom, setSelectedRoom] = useState<RoomData | null>(null)
-  const [filterFloor, setFilterFloor] = useState<string>("all")
-  const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [selectedZoneId, setSelectedZoneId] = useState("z01")
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
+  const [selectedRoomZone, setSelectedRoomZone] = useState<Zone | null>(null)
 
-  const selectedZone = ZONES.find(z => z.id === selectedZoneId) ?? ZONES[0]
+  const selectedZone = zones.find((z) => z.id === selectedZoneId) ?? zones[0]
 
-  const filteredZones = ZONES.filter(z => {
-    if (filterFloor !== "all" && z.floor !== filterFloor) return false
-    if (filterStatus !== "all" && z.status !== filterStatus) return false
-    return true
-  })
+  const totalRooms = zones.reduce((acc, z) => acc + z.rooms.length, 0)
+  const avgProgress = Math.round(zones.reduce((acc, z) => acc + z.progress, 0) / zones.length)
 
-  const allRooms = ZONES.flatMap(z => z.rooms)
-  const totalRooms = allRooms.length
-  const finishedRooms = allRooms.filter(r => r.status === "finished" || r.status === "delivered").length
-  const inProgressRooms = allRooms.filter(r => r.status === "in_progress").length
+  const allRoomsFlat = zones.flatMap((z) => z.rooms)
+  const readyCount = allRoomsFlat.filter((r) => r.status === "pret_reception" || r.status === "livre").length
+  const activeCount = allRoomsFlat.filter((r) => r.status === "en_travaux" || r.status === "finitions").length
+
+  function handleRoomClick(room: Room, zone: Zone) {
+    setSelectedRoom(room)
+    setSelectedRoomZone(zone)
+  }
 
   return (
     <div className="p-4 lg:p-6 space-y-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Zones & Locaux</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            {ZONES.length} zones · {totalRooms} locaux · {finishedRooms} terminés · {inProgressRooms} en cours
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-xs">
-          <div className="flex items-center gap-1 text-green-700 bg-green-50 border border-green-200 rounded-lg px-2 py-1.5">
-            <Check className="w-3 h-3" />
-            {finishedRooms} terminés
-          </div>
-          <div className="flex items-center gap-1 text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1.5">
-            <Building2 className="w-3 h-3" />
-            {inProgressRooms} en cours
-          </div>
+          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-blue-600" />
+            Zones & Locaux
+          </h1>
+          <p className="text-sm text-slate-500 mt-0.5">Suivi pièce par pièce — Polyclinique Cité Nassib</p>
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-3 text-xs">
-        <span className="text-slate-500 font-medium">Légende statut local :</span>
-        {(["not_started", "in_progress", "finished", "delivered"] as RoomStatus[]).map(s => (
-          <span key={s} className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 border font-medium ${roomStatusColor(s)}`}>
-            {roomStatusLabel(s)}
-          </span>
+      {/* Global stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Zones", value: zones.length, color: "text-slate-700", bg: "bg-slate-50" },
+          { label: "Locaux", value: totalRooms, color: "text-blue-700", bg: "bg-blue-50" },
+          { label: "En cours", value: activeCount, color: "text-yellow-700", bg: "bg-yellow-50" },
+          { label: "Prêts", value: readyCount, color: "text-green-700", bg: "bg-green-50" },
+        ].map(({ label, value, color, bg }) => (
+          <Card key={label} className={`${bg} border-0 shadow-sm`}>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-500">{label}</p>
+                <p className={`text-2xl font-bold ${color}`}>{value}</p>
+              </div>
+              {label === "Zones" && <Building2 className={`w-6 h-6 ${color} opacity-40`} />}
+              {label === "Locaux" && <MapPin className={`w-6 h-6 ${color} opacity-40`} />}
+              {label === "En cours" && <AlertCircle className={`w-6 h-6 ${color} opacity-40`} />}
+              {label === "Prêts" && <CheckCircle2 className={`w-6 h-6 ${color} opacity-40`} />}
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Filter className="w-4 h-4 text-slate-400" />
-        <select
-          className="border border-slate-200 rounded-md px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={filterFloor}
-          onChange={(e) => setFilterFloor(e.target.value)}
-        >
-          <option value="all">Tous les niveaux</option>
-          <option value="SS">Sous-sol (SS)</option>
-          <option value="RDC">RDC</option>
-          <option value="R+1">R+1</option>
-        </select>
-        <select
-          className="border border-slate-200 rounded-md px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-        >
-          <option value="all">Tous les statuts</option>
-          <option value="not_started">Non démarré</option>
-          <option value="in_progress">En cours</option>
-          <option value="finished">Terminé</option>
-          <option value="delivered">Livré</option>
-        </select>
-        {(filterFloor !== "all" || filterStatus !== "all") && (
-          <button
-            onClick={() => { setFilterFloor("all"); setFilterStatus("all") }}
-            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 bg-slate-100 rounded-md px-2 py-1.5"
-          >
-            <X className="w-3 h-3" /> Réinitialiser
-          </button>
-        )}
+      {/* Avancement global */}
+      <Card className="shadow-sm border-slate-200">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-slate-700">Avancement global du projet</span>
+            <span className="text-sm font-bold text-slate-900">{avgProgress}%</span>
+          </div>
+          <div className="relative h-3 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-blue-500"
+              style={{ width: `${avgProgress}%` }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Zone tabs */}
+      <div className="flex flex-wrap gap-2">
+        {zones.map((zone) => {
+          const statusCfg = getStatusConfig(zone.status)
+          const isActive = zone.id === selectedZoneId
+          return (
+            <button
+              key={zone.id}
+              onClick={() => setSelectedZoneId(zone.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all border ${
+                isActive
+                  ? "bg-slate-800 text-white border-slate-800 shadow-sm"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              <span className="font-mono">{zone.code}</span>
+              <span className="hidden sm:inline">{zone.name}</span>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
+                {zone.progress}%
+              </span>
+            </button>
+          )
+        })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Zone selector */}
-        <div className="lg:col-span-1 space-y-3">
-          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            Zones fonctionnelles
-          </h2>
-          {filteredZones.map(zone => (
-            <ZoneSummaryCard
-              key={zone.id}
-              zone={zone}
-              selected={selectedZoneId === zone.id}
-              onClick={() => setSelectedZoneId(zone.id)}
-            />
-          ))}
-        </div>
-
-        {/* Room grid */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-3">
+      {/* Selected zone summary */}
+      <Card className="shadow-sm border-slate-200">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-sm font-semibold text-slate-800">
-                {selectedZone.name}
-                <span className="ml-2 text-xs font-normal text-slate-500">
-                  {selectedZone.floor} · {selectedZone.area_sqm} m²
-                </span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {selectedZone.rooms.length} locaux · {selectedZone.functional_type}
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{selectedZone.code}</span>
+                <h2 className="text-lg font-bold text-slate-900">{selectedZone.name}</h2>
+                <Badge className={`${getStatusConfig(selectedZone.status).className} text-xs`}>
+                  {getStatusConfig(selectedZone.status).label}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-4 mt-2 text-sm text-slate-600">
+                <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-slate-400" />{selectedZone.floor}</span>
+                <span className="flex items-center gap-1"><Building2 className="w-3.5 h-3.5 text-slate-400" />{selectedZone.area} m²</span>
+                <span className="flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5 text-slate-400" />{selectedZone.rooms.length} local{selectedZone.rooms.length !== 1 ? "ux" : ""}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-24 bg-slate-100 rounded-full h-2">
+            <div className="min-w-[180px]">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-slate-500">Avancement</span>
+                <span className="text-sm font-bold text-slate-800">{selectedZone.progress}%</span>
+              </div>
+              <div className="relative h-3 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className={`${progressColor(selectedZone.progress)} h-2 rounded-full`}
+                  className={`h-full rounded-full ${getProgressColor(selectedZone.status)}`}
                   style={{ width: `${selectedZone.progress}%` }}
                 />
               </div>
-              <span className="text-sm font-bold text-slate-700">{selectedZone.progress}%</span>
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-            {selectedZone.rooms.map(room => (
-              <button
-                key={room.id}
-                onClick={() => setSelectedRoom(room)}
-                className={`text-left border-l-4 border rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition-all hover:border-r-blue-100 ${roomCardBorder(room.status)}`}
-              >
-                {/* Room header */}
-                <div className="flex items-start justify-between gap-1 mb-2">
-                  <div className="min-w-0">
-                    <p className="text-xs font-mono text-slate-400">{room.code}</p>
-                    <p className="text-sm font-semibold text-slate-800 leading-tight truncate" title={room.name}>
-                      {room.name}
-                    </p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0 mt-1" />
-                </div>
-
-                {/* Area + use */}
-                <p className="text-xs text-slate-500 mb-2">{room.area_sqm} m² · {room.functional_use}</p>
-
-                {/* Progress */}
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex-1 bg-slate-100 rounded-full h-1.5">
-                    <div
-                      className={`${progressColor(room.progress)} h-1.5 rounded-full`}
-                      style={{ width: `${room.progress}%` }}
-                    />
-                  </div>
-                  <span className="text-xs font-medium text-slate-600">{room.progress}%</span>
-                </div>
-
-                {/* Trades */}
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {(Object.keys(room.trades) as (keyof TradeStatus)[]).map(t => (
-                    <div
-                      key={t}
-                      className={`flex items-center gap-0.5 text-xs px-1 py-0.5 rounded ${
-                        room.trades[t]
-                          ? "bg-green-50 text-green-600"
-                          : "bg-gray-100 text-gray-400"
-                      }`}
-                      title={room.trades[t] ? `${TRADE_LABELS[t]}: OK` : `${TRADE_LABELS[t]}: en attente`}
-                    >
-                      {room.trades[t] ? <Check className="w-2.5 h-2.5" /> : <X className="w-2.5 h-2.5" />}
-                      {TRADE_LABELS[t]}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Status + alerts */}
-                <div className="flex items-center justify-between">
-                  <span className={`text-xs rounded px-1.5 py-0.5 border font-medium ${roomStatusColor(room.status)}`}>
-                    {roomStatusLabel(room.status)}
-                  </span>
-                  {room.pending_items.length > 0 && (
-                    <span className="flex items-center gap-1 text-xs text-amber-600">
-                      <AlertTriangle className="w-3 h-3" />
-                      {room.pending_items.length}
-                    </span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
+      {/* Room grid */}
+      {selectedZone.rooms.length === 0 ? (
+        <div className="text-center py-16 text-slate-400 text-sm">Aucun local défini pour cette zone.</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {selectedZone.rooms.map((room) => (
+            <RoomCard
+              key={room.id}
+              room={room}
+              zone={selectedZone}
+              onSelect={() => handleRoomClick(room, selectedZone)}
+            />
+          ))}
         </div>
-      </div>
+      )}
 
-      <RoomDetailModal room={selectedRoom} onClose={() => setSelectedRoom(null)} />
+      {/* Room detail modal */}
+      <RoomDetailModal
+        room={selectedRoom}
+        zone={selectedRoomZone}
+        onClose={() => { setSelectedRoom(null); setSelectedRoomZone(null) }}
+      />
     </div>
   )
 }

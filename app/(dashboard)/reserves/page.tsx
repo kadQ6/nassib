@@ -2,35 +2,35 @@
 
 import { useState } from "react"
 import {
-  Eye,
-  Plus,
-  Filter,
-  LayoutList,
-  Columns,
-  Download,
-  FileText,
-  Table2,
-  ImageIcon,
-  MessageSquare,
-  CheckCircle2,
-  XCircle,
   AlertTriangle,
   Clock,
+  CheckCircle2,
+  Filter,
+  Plus,
+  Download,
+  LayoutList,
+  Columns3,
+  X,
+  MessageSquare,
+  Camera,
+  ChevronRight,
+  CalendarDays,
+  User,
+  Tag,
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogFooter,
   DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-  DialogClose,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -38,581 +38,216 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type Gravite = "critique" | "majeure" | "mineure"
-type Statut = "open" | "in_progress" | "resolved" | "closed" | "contested"
-type Lot = "GC" | "CFO" | "CVC" | "PLB" | "FLU" | "CF" | "REV" | "PEI"
+type Severity = "critique" | "majeure" | "mineure"
+type Status = "Ouverte" | "En Cours" | "Corrigée" | "À Vérifier" | "Levée"
+type ReserveLot = "GC" | "CFO" | "CVC" | "PLB" | "FLU" | "MEN" | "REV" | "SEU"
 
 interface Reserve {
   id: string
-  ref: string
+  numero: string
   date: string
   local: string
-  lot: Lot
+  lot: ReserveLot
   description: string
-  gravite: Gravite
+  gravite: Severity
   type: string
   responsable: string
   echeance: string
-  statut: Statut
-  actionRequise: string
+  statut: Status
   joursOuverts: number
+  actionRequise: string
 }
 
 // ─── Mock Data ─────────────────────────────────────────────────────────────────
 
-const RESERVES: Reserve[] = [
+const mockReserves: Reserve[] = [
   {
-    id: "1",
-    ref: "RES-001",
-    date: "02/01/2026",
-    local: "Escalier R+1",
-    lot: "GC",
-    description: "Fissures béton apparent escalier R+1",
-    gravite: "critique",
-    type: "Structural",
-    responsable: "STPB SARL",
-    echeance: "10/01/2026",
-    statut: "open",
-    actionRequise: "Injection résine époxy et reprise béton sur fissures > 0,3 mm. Contrôle par bureau de contrôle avant validation.",
-    joursOuverts: 11,
+    id: "1", numero: "RES-001", date: "02/12/2025", local: "Escalier R+1", lot: "GC",
+    description: "Fissures béton apparent escalier R+1 — fissures de 3mm sur voile porteur",
+    gravite: "critique", type: "Structure", responsable: "SMCE BTP", echeance: "15/01/2026",
+    statut: "Ouverte", joursOuverts: 42, actionRequise: "Injection résine époxy et reprise béton sous contrôle bureau d'études",
   },
   {
-    id: "2",
-    ref: "RES-002",
-    date: "03/01/2026",
-    local: "Salle serveurs",
-    lot: "CFO",
-    description: "Câblage électrique non protégé salle serveurs",
-    gravite: "critique",
-    type: "Sécurité",
-    responsable: "Elec Pro",
-    echeance: "08/01/2026",
-    statut: "in_progress",
-    actionRequise: "Pose de chemins de câbles et conduits IRL conformes à la norme NF C 15-100. Fourniture du PV de conformité.",
-    joursOuverts: 10,
+    id: "2", numero: "RES-002", date: "05/12/2025", local: "Salle Serveurs RDC", lot: "CFO",
+    description: "Câblage électrique non protégé salle serveurs — chemins de câbles ouverts",
+    gravite: "critique", type: "Sécurité électrique", responsable: "ELECTRO MAG", echeance: "10/01/2026",
+    statut: "En Cours", joursOuverts: 39, actionRequise: "Pose chemins de câbles avec couvercle et mise à la terre",
   },
   {
-    id: "3",
-    ref: "RES-003",
-    date: "04/01/2026",
-    local: "Salle réveil",
-    lot: "FLU",
-    description: "Robinetterie O2 non repérée salle de réveil",
-    gravite: "critique",
-    type: "Fluides médicaux",
-    responsable: "MedGaz",
-    echeance: "12/01/2026",
-    statut: "open",
-    actionRequise: "Pose des étiquettes de repérage réglementaires sur toutes les prises de fluides médicaux. Validation par organisme habilité.",
-    joursOuverts: 9,
+    id: "3", numero: "RES-003", date: "08/12/2025", local: "Salle de Réveil Bloc", lot: "FLU",
+    description: "Robinetterie O2 non repérée salle de réveil — prises non identifiées",
+    gravite: "critique", type: "Fluides Médicaux", responsable: "FLUIDEX", echeance: "20/01/2026",
+    statut: "Ouverte", joursOuverts: 36, actionRequise: "Pose plaques d'identification normalisées NF S 90-116",
   },
   {
-    id: "4",
-    ref: "RES-004",
-    date: "05/01/2026",
-    local: "Sous-sol",
-    lot: "PLB",
-    description: "Fuite détectée réseau EF sous-sol",
-    gravite: "majeure",
-    type: "Plomberie",
-    responsable: "AquaPlomb",
-    echeance: "15/01/2026",
-    statut: "in_progress",
-    actionRequise: "Localisation et reprise du joint défectueux sur la conduite DN50. Essai d'étanchéité 10 bars après réparation.",
-    joursOuverts: 8,
+    id: "4", numero: "RES-004", date: "10/12/2025", local: "Sous-sol — Local technique", lot: "PLB",
+    description: "Fuite détectée réseau EF sous-sol — débit estimé 0,5 L/min",
+    gravite: "majeure", type: "Plomberie", responsable: "SANIPLOMB", echeance: "25/01/2026",
+    statut: "En Cours", joursOuverts: 34, actionRequise: "Localisation précise et remplacement raccord défectueux",
   },
   {
-    id: "5",
-    ref: "RES-005",
-    date: "06/01/2026",
-    local: "WC personnel RDC",
-    lot: "CFO",
-    description: "Luminaire absent WC personnel RDC",
-    gravite: "mineure",
-    type: "Électricité",
-    responsable: "Elec Pro",
-    echeance: "20/01/2026",
-    statut: "open",
-    actionRequise: "Fourniture et pose d'un luminaire étanche IP54 conforme au plan d'éclairage. Vérification de la mise à la terre.",
-    joursOuverts: 7,
+    id: "5", numero: "RES-005", date: "12/12/2025", local: "WC Personnel RDC", lot: "CFO",
+    description: "Luminaire absent WC personnel RDC — implantation prévue au plan",
+    gravite: "mineure", type: "Éclairage", responsable: "ELECTRO MAG", echeance: "15/02/2026",
+    statut: "Ouverte", joursOuverts: 32, actionRequise: "Fourniture et pose luminaire LED selon plan d'exécution",
   },
   {
-    id: "6",
-    ref: "RES-006",
-    date: "07/01/2026",
-    local: "Bloc opératoire A",
-    lot: "CVC",
-    description: "Débit d'air insuffisant bloc opératoire A — mesure à 1 800 m³/h au lieu de 2 200 m³/h",
-    gravite: "critique",
-    type: "CVC",
-    responsable: "ClimaTech",
-    echeance: "18/01/2026",
-    statut: "in_progress",
-    actionRequise: "Réglage des registres de distribution et vérification de la centrale de traitement d'air. PV de mesure après réglage.",
-    joursOuverts: 6,
+    id: "6", numero: "RES-006", date: "15/12/2025", local: "Bloc Opératoire 01", lot: "CVC",
+    description: "Grille de soufflage décentrée dans plafond salle BO-01",
+    gravite: "majeure", type: "Aéraulique", responsable: "CLIMAFROID", echeance: "30/01/2026",
+    statut: "À Vérifier", joursOuverts: 29, actionRequise: "Repositionnement grille et reprise plafond",
   },
   {
-    id: "7",
-    ref: "RES-007",
-    date: "08/01/2026",
-    local: "Couloir R+2",
-    lot: "REV",
-    description: "Carrelage décollé couloir principal R+2 — 4 m² concernés",
-    gravite: "majeure",
-    type: "Revêtement",
-    responsable: "FiniBâti",
-    echeance: "22/01/2026",
-    statut: "open",
-    actionRequise: "Dépose et repose du carrelage avec mise en œuvre de la colle appropriée. Essai de sonnage après séchage complet.",
-    joursOuverts: 5,
+    id: "7", numero: "RES-007", date: "18/12/2025", local: "Couloir Urgences", lot: "REV",
+    description: "Carrelage non conforme couloir urgences — teinte différente du CCTP",
+    gravite: "mineure", type: "Revêtements", responsable: "CERAMITEC", echeance: "28/02/2026",
+    statut: "Ouverte", joursOuverts: 26, actionRequise: "Dépose et repose carrelage conforme référence CCTP art. 4.2",
   },
   {
-    id: "8",
-    ref: "RES-008",
-    date: "08/01/2026",
-    local: "Salle de stérilisation",
-    lot: "PLB",
-    description: "Pression réseau EC insuffisante — 1,2 bar au lieu de 2 bar requis",
-    gravite: "majeure",
-    type: "Plomberie",
-    responsable: "AquaPlomb",
-    echeance: "25/01/2026",
-    statut: "contested",
-    actionRequise: "Vérification du réducteur de pression et réglage. Si dysfonctionnement confirmé, remplacement de l'organe défectueux.",
-    joursOuverts: 5,
+    id: "8", numero: "RES-008", date: "20/12/2025", local: "Salle d'accouchement 01", lot: "PLB",
+    description: "Siphon de sol non posé salle d'accouchement SA-01",
+    gravite: "majeure", type: "Plomberie", responsable: "SANIPLOMB", echeance: "20/01/2026",
+    statut: "Ouverte", joursOuverts: 24, actionRequise: "Fourniture et pose siphon de sol inox DN 50",
   },
   {
-    id: "9",
-    ref: "RES-009",
-    date: "09/01/2026",
-    local: "Réception principale",
-    lot: "CF",
-    description: "Détecteur incendie manquant zone réception — 2 têtes non posées",
-    gravite: "critique",
-    type: "Sécurité incendie",
-    responsable: "SafeFire",
-    echeance: "14/01/2026",
-    statut: "resolved",
-    actionRequise: "Pose des 2 têtes détectrices fumée manquantes et raccordement au tableau de signalisation. Test de fonctionnement.",
-    joursOuverts: 4,
+    id: "9", numero: "RES-009", date: "22/12/2025", local: "Local TGBT", lot: "CFO",
+    description: "Repérage barrettes de terre TGBT incomplet — 3 barrettes non identifiées",
+    gravite: "critique", type: "Sécurité électrique", responsable: "ELECTRO MAG", echeance: "12/01/2026",
+    statut: "En Cours", joursOuverts: 22, actionRequise: "Étiquetage complet et mise à jour schéma unifilaire",
   },
   {
-    id: "10",
-    ref: "RES-010",
-    date: "09/01/2026",
-    local: "Parking sous-sol",
-    lot: "GC",
-    description: "Infiltration d'eau joint de dilatation parking sous-sol — niveau P1",
-    gravite: "majeure",
-    type: "Étanchéité",
-    responsable: "STPB SARL",
-    echeance: "28/01/2026",
-    statut: "open",
-    actionRequise: "Reprise de l'étanchéité du joint de dilatation avec profilé hydrogonflant et protection béton projeté.",
-    joursOuverts: 4,
+    id: "10", numero: "RES-010", date: "24/12/2025", local: "Néonatologie — Chambre N-02", lot: "CVC",
+    description: "Thermostat ambiance absent chambre néonatologie N-02",
+    gravite: "majeure", type: "Régulation", responsable: "CLIMAFROID", echeance: "05/02/2026",
+    statut: "Ouverte", joursOuverts: 20, actionRequise: "Pose et câblage thermostat ambiance modèle validé en coordination",
   },
   {
-    id: "11",
-    ref: "RES-011",
-    date: "10/01/2026",
-    local: "Laboratoire analyses",
-    lot: "FLU",
-    description: "Prise vide médical labo — débit insuffisant 8 L/min au lieu de 40 L/min",
-    gravite: "critique",
-    type: "Fluides médicaux",
-    responsable: "MedGaz",
-    echeance: "20/01/2026",
-    statut: "in_progress",
-    actionRequise: "Vérification du branchement sur réseau principal et contrôle du diamètre de la conduite d'alimentation. Retest débit.",
-    joursOuverts: 3,
+    id: "11", numero: "RES-011", date: "26/12/2025", local: "Façade Nord Niveau R+2", lot: "MEN",
+    description: "Joint d'étanchéité menuiserie façade nord R+2 — décollement observé",
+    gravite: "majeure", type: "Étanchéité", responsable: "ALUMITEC", echeance: "10/02/2026",
+    statut: "Corrigée", joursOuverts: 18, actionRequise: "Reprise joint silicone neutre selon DTA",
   },
   {
-    id: "12",
-    ref: "RES-012",
-    date: "10/01/2026",
-    local: "Bureau médecins R+1",
-    lot: "CFO",
-    description: "Interrupteur va-et-vient bureau médecins — câblage inversé",
-    gravite: "mineure",
-    type: "Électricité",
-    responsable: "Elec Pro",
-    echeance: "25/01/2026",
-    statut: "closed",
-    actionRequise: "Correction du câblage de l'interrupteur va-et-vient selon schéma unifilaire révisé.",
-    joursOuverts: 3,
+    id: "12", numero: "RES-012", date: "28/12/2025", local: "Escalier Secours R+1→R+2", lot: "SEU",
+    description: "Bloc de sécurité éclairage BAES absent cage escalier secours",
+    gravite: "critique", type: "Sécurité incendie", responsable: "SECURELEC", echeance: "08/01/2026",
+    statut: "Levée", joursOuverts: 0, actionRequise: "Pose BAES conforme NF C 71-800",
   },
   {
-    id: "13",
-    ref: "RES-013",
-    date: "11/01/2026",
-    local: "Salle d'attente RDC",
-    lot: "PEI",
-    description: "Peinture cloison salle d'attente RDC — nuance incorrecte RAL 9003 posé au lieu de RAL 9010",
-    gravite: "mineure",
-    type: "Finition",
-    responsable: "PeintPro",
-    echeance: "30/01/2026",
-    statut: "open",
-    actionRequise: "Reprise de la peinture avec la teinte conforme au carnet de couleurs validé en réunion n°20.",
-    joursOuverts: 2,
+    id: "13", numero: "RES-013", date: "02/01/2026", local: "Consultation Gynéco 03", lot: "CFO",
+    description: "Prise RJ45 non posée salle consultation gynécologie 03",
+    gravite: "mineure", type: "Courants faibles", responsable: "ELECTRO MAG", echeance: "28/02/2026",
+    statut: "Ouverte", joursOuverts: 11, actionRequise: "Pose 2 prises RJ45 Cat6A selon plan réseau",
   },
   {
-    id: "14",
-    ref: "RES-014",
-    date: "11/01/2026",
-    local: "Terrasse R+3",
-    lot: "GC",
-    description: "Garde-corps terrasse R+3 — hauteur 0,85 m au lieu de 1,10 m réglementaire",
-    gravite: "critique",
-    type: "Sécurité",
-    responsable: "STPB SARL",
-    echeance: "21/01/2026",
-    statut: "in_progress",
-    actionRequise: "Dépose et repose des garde-corps à la hauteur réglementaire. Calcul de résistance à fournir au BET structure.",
-    joursOuverts: 2,
+    id: "14", numero: "RES-014", date: "04/01/2026", local: "Pharmacie RDC", lot: "CVC",
+    description: "Bouche d'extraction insuffisante pharmacie — débit mesuré 120 m³/h vs 250 requis",
+    gravite: "majeure", type: "Ventilation", responsable: "CLIMAFROID", echeance: "25/01/2026",
+    statut: "En Cours", joursOuverts: 9, actionRequise: "Remplacement bouche et rééquilibrage réseau aéraulique",
   },
   {
-    id: "15",
-    ref: "RES-015",
-    date: "12/01/2026",
-    local: "Salle d'imagerie",
-    lot: "CVC",
-    description: "Condensation sur gaine CVC salle d'imagerie — isolation défectueuse",
-    gravite: "majeure",
-    type: "CVC",
-    responsable: "ClimaTech",
-    echeance: "02/02/2026",
-    statut: "open",
-    actionRequise: "Reprise de l'isolant thermique sur 6 ml de gaine avec matériau certifié épaisseur 50 mm.",
-    joursOuverts: 1,
+    id: "15", numero: "RES-015", date: "05/01/2026", local: "Salle Stérilisation", lot: "PLB",
+    description: "Raccordement EU autoclave non conforme — pente insuffisante 0,5% vs 1% requis",
+    gravite: "majeure", type: "Plomberie", responsable: "SANIPLOMB", echeance: "20/02/2026",
+    statut: "Ouverte", joursOuverts: 8, actionRequise: "Reprise collecteur EU avec pente réglementaire",
   },
   {
-    id: "16",
-    ref: "RES-016",
-    date: "12/01/2026",
-    local: "Bloc opératoire B",
-    lot: "REV",
-    description: "Joint de finition sol résine bloc opératoire B — non-conformité couleur et planéité",
-    gravite: "majeure",
-    type: "Revêtement",
-    responsable: "FiniBâti",
-    echeance: "05/02/2026",
-    statut: "contested",
-    actionRequise: "Reprise des zones non conformes après validation du plan de recollement. Mesure de planéité avec règle de 2 m.",
-    joursOuverts: 1,
+    id: "16", numero: "RES-016", date: "06/01/2026", local: "Labo — Hématologie", lot: "FLU",
+    description: "Réseau air comprimé médical non testé labo hématologie",
+    gravite: "majeure", type: "Fluides Médicaux", responsable: "FLUIDEX", echeance: "31/01/2026",
+    statut: "À Vérifier", joursOuverts: 7, actionRequise: "Test pression 6 bars 24h et procès-verbal",
   },
   {
-    id: "17",
-    ref: "RES-017",
-    date: "12/01/2026",
-    local: "Archives RDC",
-    lot: "CF",
-    description: "Porte coupe-feu EI90 archives RDC — ferme-porte non fonctionnel",
-    gravite: "majeure",
-    type: "Sécurité incendie",
-    responsable: "SafeFire",
-    echeance: "18/01/2026",
-    statut: "resolved",
-    actionRequise: "Remplacement du ferme-porte défectueux par un modèle certifié. Test de fermeture automatique à documenter.",
-    joursOuverts: 1,
+    id: "17", numero: "RES-017", date: "07/01/2026", local: "Couloir Hospit R+1", lot: "REV",
+    description: "Peinture murs couloir hospitalisation R+1 non achevée — 40 ml manquants",
+    gravite: "mineure", type: "Finitions", responsable: "PEINTURE PRO", echeance: "15/02/2026",
+    statut: "Ouverte", joursOuverts: 6, actionRequise: "Achèvement peinture lessivable classe 3 couleur RAL 9010",
   },
   {
-    id: "18",
-    ref: "RES-018",
-    date: "13/01/2026",
-    local: "Couloir soins R+2",
-    lot: "CFO",
-    description: "Absence de signalétique de sécurité couloir soins R+2 — issues de secours non balisées",
-    gravite: "majeure",
-    type: "Sécurité",
-    responsable: "Elec Pro",
-    echeance: "20/01/2026",
-    statut: "open",
-    actionRequise: "Fourniture et pose des blocs de balisage normalisés sur toutes les sorties de secours du niveau.",
-    joursOuverts: 0,
+    id: "18", numero: "RES-018", date: "08/01/2026", local: "Bloc Opératoire 02", lot: "CFO",
+    description: "Luminaire salle opératoire BO-02 non conforme — IRC < 90 requis",
+    gravite: "majeure", type: "Éclairage", responsable: "ELECTRO MAG", echeance: "10/02/2026",
+    statut: "Corrigée", joursOuverts: 0, actionRequise: "Remplacement luminaires par modèle IRC ≥ 90 référence catalogue validé",
   },
   {
-    id: "19",
-    ref: "RES-019",
-    date: "13/01/2026",
-    local: "Local TGBT",
-    lot: "CFO",
-    description: "TGBT — pas de cadenassage sur jeux de barres HTA, non-conformité sécurité électrique",
-    gravite: "critique",
-    type: "Sécurité électrique",
-    responsable: "Elec Pro",
-    echeance: "15/01/2026",
-    statut: "in_progress",
-    actionRequise: "Installation des dispositifs de cadenassage réglementaires sur tous les jeux de barres HTA. Consignation à documenter.",
-    joursOuverts: 0,
+    id: "19", numero: "RES-019", date: "10/01/2026", local: "Toiture Terrasse R+3", lot: "GC",
+    description: "Relevé d'étanchéité insuffisant en périphérie toiture-terrasse — hauteur 10cm vs 15cm",
+    gravite: "majeure", type: "Étanchéité", responsable: "SMCE BTP", echeance: "05/02/2026",
+    statut: "Levée", joursOuverts: 0, actionRequise: "Reprise relevé étanchéité selon DTU 20.12",
   },
   {
-    id: "20",
-    ref: "RES-020",
-    date: "13/01/2026",
-    local: "Toiture",
-    lot: "GC",
-    description: "Évacuation eaux pluviales toiture — crépine obstruée niveau R+3 aile Nord",
-    gravite: "mineure",
-    type: "Étanchéité",
-    responsable: "STPB SARL",
-    echeance: "28/01/2026",
-    statut: "closed",
-    actionRequise: "Nettoyage et vérification des crépines. Pose de protège-crépines conformes.",
-    joursOuverts: 0,
-  },
-]
-
-const MOCK_COMMENTS = [
-  {
-    id: "c1",
-    auteur: "Ingénieur Maître d'Œuvre",
-    date: "10/01/2026 à 09:15",
-    texte: "Réserve confirmée lors de la visite de chantier. L'entreprise a été notifiée par email. Délai de correction : 7 jours.",
-  },
-  {
-    id: "c2",
-    auteur: "Chef de chantier — Entreprise",
-    date: "11/01/2026 à 14:32",
-    texte: "Intervention planifiée pour le 14/01/2026. Matériel commandé. Photos avant travaux jointes au rapport.",
+    id: "20", numero: "RES-020", date: "12/01/2026", local: "Urgences — Déchocage", lot: "FLU",
+    description: "Centrale vide médical déchocage — pression résidu 55 kPa vs 40 kPa maxi",
+    gravite: "critique", type: "Fluides Médicaux", responsable: "FLUIDEX", echeance: "18/01/2026",
+    statut: "En Cours", joursOuverts: 1, actionRequise: "Réglage soupape et re-test pressions selon NF EN ISO 7396-1",
   },
 ]
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-function getStatusLabel(statut: Statut): string {
-  const map: Record<Statut, string> = {
-    open: "Ouverte",
-    in_progress: "En Cours",
-    resolved: "Corrigée",
-    closed: "Levée",
-    contested: "À Vérifier",
+function SeverityBadge({ gravite }: { gravite: Severity }) {
+  if (gravite === "critique") return <Badge className="bg-red-100 text-red-800 border-0 text-xs">Critique</Badge>
+  if (gravite === "majeure") return <Badge className="bg-orange-100 text-orange-800 border-0 text-xs">Majeure</Badge>
+  return <Badge className="bg-yellow-100 text-yellow-800 border-0 text-xs">Mineure</Badge>
+}
+
+function StatusBadge({ statut }: { statut: Status }) {
+  const map: Record<Status, string> = {
+    Ouverte: "bg-red-100 text-red-700",
+    "En Cours": "bg-blue-100 text-blue-700",
+    Corrigée: "bg-purple-100 text-purple-700",
+    "À Vérifier": "bg-amber-100 text-amber-700",
+    Levée: "bg-green-100 text-green-700",
   }
-  return map[statut]
+  return <Badge className={`${map[statut]} border-0 text-xs`}>{statut}</Badge>
 }
 
-function getStatusVariant(statut: Statut): "destructive" | "warning" | "info" | "success" | "secondary" {
-  const map: Record<Statut, "destructive" | "warning" | "info" | "success" | "secondary"> = {
-    open: "destructive",
-    in_progress: "warning",
-    resolved: "info",
-    closed: "success",
-    contested: "secondary",
-  }
-  return map[statut]
+const KANBAN_COLUMNS: Status[] = ["Ouverte", "En Cours", "Corrigée", "À Vérifier", "Levée"]
+
+const kanbanColors: Record<Status, string> = {
+  Ouverte: "border-red-300 bg-red-50",
+  "En Cours": "border-blue-300 bg-blue-50",
+  Corrigée: "border-purple-300 bg-purple-50",
+  "À Vérifier": "border-amber-300 bg-amber-50",
+  Levée: "border-green-300 bg-green-50",
 }
 
-function getGraviteVariant(g: Gravite): "destructive" | "warning" | "secondary" {
-  if (g === "critique") return "destructive"
-  if (g === "majeure") return "warning"
-  return "secondary"
-}
+const allLots: ReserveLot[] = ["GC", "CFO", "CVC", "PLB", "FLU", "MEN", "REV", "SEU"]
 
-function getGraviteLabel(g: Gravite): string {
-  if (g === "critique") return "Critique"
-  if (g === "majeure") return "Majeure"
-  return "Mineure"
-}
+// ─── Modal: New Reserve ────────────────────────────────────────────────────────
 
-const KANBAN_COLUMNS: { statut: Statut; label: string; color: string }[] = [
-  { statut: "open", label: "Ouverte", color: "border-red-300 bg-red-50" },
-  { statut: "in_progress", label: "En Cours", color: "border-amber-300 bg-amber-50" },
-  { statut: "resolved", label: "Corrigée", color: "border-blue-300 bg-blue-50" },
-  { statut: "contested", label: "À Vérifier", color: "border-purple-300 bg-purple-50" },
-  { statut: "closed", label: "Levée", color: "border-green-300 bg-green-50" },
-]
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function GraviteDot({ gravite }: { gravite: Gravite }) {
-  const colors = {
-    critique: "bg-red-500",
-    majeure: "bg-amber-500",
-    mineure: "bg-yellow-400",
-  }
-  return <span className={`inline-block w-2 h-2 rounded-full ${colors[gravite]} mr-1.5 flex-shrink-0`} />
-}
-
-// ─── Reserve Detail Modal ─────────────────────────────────────────────────────
-
-function ReserveDetailModal({
-  reserve,
-  onClose,
-}: {
-  reserve: Reserve
-  onClose: () => void
-}) {
+function NewReserveModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
-    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <div className="flex items-center gap-3">
-          <DialogTitle className="text-base font-bold text-slate-900">
-            {reserve.ref} — {reserve.local}
-          </DialogTitle>
-          <Badge variant={getGraviteVariant(reserve.gravite)}>
-            {getGraviteLabel(reserve.gravite)}
-          </Badge>
-          <Badge variant={getStatusVariant(reserve.statut)}>
-            {getStatusLabel(reserve.statut)}
-          </Badge>
-        </div>
-        <DialogDescription className="text-sm text-slate-600 mt-1">
-          {reserve.description}
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="space-y-5 mt-2">
-        {/* Info grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {[
-            { label: "Lot", value: reserve.lot },
-            { label: "Type", value: reserve.type },
-            { label: "Responsable", value: reserve.responsable },
-            { label: "Date ouverture", value: reserve.date },
-            { label: "Échéance", value: reserve.echeance },
-            { label: "Jours ouverts", value: `${reserve.joursOuverts}j` },
-          ].map(({ label, value }) => (
-            <div key={label} className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
-              <p className="text-xs text-slate-500 font-medium mb-0.5">{label}</p>
-              <p className="text-sm font-semibold text-slate-800">{value}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Action requise */}
-        <div>
-          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
-            Action Requise
-          </p>
-          <p className="text-sm text-slate-700 bg-amber-50 border border-amber-100 rounded-lg p-3 leading-relaxed">
-            {reserve.actionRequise}
-          </p>
-        </div>
-
-        {/* Photos */}
-        <div>
-          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
-            Photos
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            {["Avant travaux", "Après travaux"].map((label) => (
-              <div
-                key={label}
-                className="aspect-video bg-slate-100 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 transition-colors"
-              >
-                <ImageIcon className="w-7 h-7 text-slate-300" />
-                <span className="text-xs text-slate-400 font-medium">{label}</span>
-              </div>
-            ))}
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Nouvelle Réserve</DialogTitle>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <Label>Description *</Label>
+            <Textarea placeholder="Décrire le défaut constaté..." className="mt-1" rows={3} />
           </div>
-        </div>
-
-        {/* Comments */}
-        <div>
-          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-            <MessageSquare className="w-3.5 h-3.5" />
-            Commentaires ({MOCK_COMMENTS.length})
-          </p>
-          <div className="space-y-3">
-            {MOCK_COMMENTS.map((c) => (
-              <div key={c.id} className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-semibold text-slate-700">{c.auteur}</span>
-                  <span className="text-xs text-slate-400">{c.date}</span>
-                </div>
-                <p className="text-sm text-slate-600 leading-relaxed">{c.texte}</p>
-              </div>
-            ))}
+          <div>
+            <Label>Local / Zone</Label>
+            <Input placeholder="ex: Salle BO-01" className="mt-1" />
           </div>
-          <div className="mt-3 flex gap-2">
-            <Input placeholder="Ajouter un commentaire…" className="text-sm h-9 flex-1" />
-            <Button size="sm" className="h-9">Envoyer</Button>
-          </div>
-        </div>
-      </div>
-
-      <DialogFooter className="flex flex-row gap-2 mt-2">
-        <DialogClose asChild>
-          <Button variant="outline" size="sm" onClick={onClose} className="flex-1">
-            Fermer
-          </Button>
-        </DialogClose>
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
-        >
-          <XCircle className="w-3.5 h-3.5 mr-1.5" />
-          Contester
-        </Button>
-        <Button
-          size="sm"
-          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-        >
-          <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-          Confirmer Levée
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  )
-}
-
-// ─── New Reserve Modal ─────────────────────────────────────────────────────────
-
-function NewReserveModal({ onClose }: { onClose: () => void }) {
-  return (
-    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle className="text-base font-bold text-slate-900">
-          Nouvelle Réserve
-        </DialogTitle>
-        <DialogDescription className="text-sm text-slate-500">
-          Enregistrer une nouvelle réserve ou non-conformité
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="space-y-4 mt-2">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-slate-700">Local / Zone *</Label>
-            <Input placeholder="ex. Bloc opératoire A" className="h-9 text-sm" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-slate-700">Lot *</Label>
+          <div>
+            <Label>Lot</Label>
             <Select>
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="Sélectionner" />
-              </SelectTrigger>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="Choisir un lot" /></SelectTrigger>
               <SelectContent>
-                {["GC", "CFO", "CVC", "PLB", "FLU", "CF", "REV", "PEI"].map((l) => (
-                  <SelectItem key={l} value={l}>{l}</SelectItem>
-                ))}
+                {allLots.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-slate-700">Description *</Label>
-          <Textarea
-            placeholder="Décrire la réserve ou non-conformité observée…"
-            className="text-sm resize-none"
-            rows={3}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-slate-700">Gravité *</Label>
+          <div>
+            <Label>Gravité</Label>
             <Select>
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="Sélectionner" />
-              </SelectTrigger>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="Choisir la gravité" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="critique">Critique</SelectItem>
                 <SelectItem value="majeure">Majeure</SelectItem>
@@ -620,76 +255,136 @@ function NewReserveModal({ onClose }: { onClose: () => void }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-slate-700">Type</Label>
-            <Select>
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="Sélectionner" />
-              </SelectTrigger>
-              <SelectContent>
-                {["Structural", "Sécurité", "Plomberie", "Électricité", "CVC", "Fluides médicaux", "Revêtement", "Finition", "Étanchéité", "Sécurité incendie"].map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div>
+            <Label>Type</Label>
+            <Input placeholder="ex: Structure, Étanchéité..." className="mt-1" />
+          </div>
+          <div>
+            <Label>Responsable</Label>
+            <Input placeholder="Entreprise responsable" className="mt-1" />
+          </div>
+          <div>
+            <Label>Échéance</Label>
+            <Input type="date" className="mt-1" />
+          </div>
+          <div className="col-span-2">
+            <Label>Action requise</Label>
+            <Textarea placeholder="Décrire l'action corrective attendue..." className="mt-1" rows={2} />
           </div>
         </div>
+        <DialogFooter className="mt-4">
+          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button onClick={onClose}>Créer la réserve</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-slate-700">Responsable</Label>
-            <Input placeholder="Entreprise responsable" className="h-9 text-sm" />
+// ─── Modal: Reserve Detail ─────────────────────────────────────────────────────
+
+function ReserveDetailModal({ reserve, onClose }: { reserve: Reserve | null; onClose: () => void }) {
+  const mockComments = [
+    { author: "Chef de Projet", date: "03/12/2025", text: "Réserve ouverte suite visite chantier hebdomadaire." },
+    { author: "Conducteur Travaux", date: "08/12/2025", text: "Entreprise notifiée, intervention programmée pour semaine prochaine." },
+    { author: "SMCE BTP", date: "14/12/2025", text: "Matériaux commandés, intervention prévue le 20/12." },
+  ]
+  if (!reserve) return null
+  return (
+    <Dialog open={!!reserve} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 flex-wrap">
+            <span>{reserve.numero}</span>
+            <SeverityBadge gravite={reserve.gravite} />
+            <StatusBadge statut={reserve.statut} />
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-5">
+          <div>
+            <p className="text-sm font-semibold text-slate-700 mb-1">Description</p>
+            <p className="text-sm text-slate-600 bg-slate-50 rounded-lg p-3">{reserve.description}</p>
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-slate-700">Échéance</Label>
-            <Input type="date" className="h-9 text-sm" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {[
+              { label: "Local", value: reserve.local, icon: Tag },
+              { label: "Lot", value: reserve.lot, icon: Tag },
+              { label: "Type", value: reserve.type, icon: Tag },
+              { label: "Responsable", value: reserve.responsable, icon: User },
+              { label: "Date", value: reserve.date, icon: CalendarDays },
+              { label: "Échéance", value: reserve.echeance, icon: CalendarDays },
+            ].map(({ label, value, icon: Icon }) => (
+              <div key={label} className="bg-slate-50 rounded-lg p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Icon className="w-3.5 h-3.5 text-slate-400" />
+                  <p className="text-xs text-slate-500">{label}</p>
+                </div>
+                <p className="text-sm font-semibold text-slate-800">{value}</p>
+              </div>
+            ))}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-700 mb-1">Action requise</p>
+            <p className="text-sm text-slate-600 bg-amber-50 border border-amber-200 rounded-lg p-3">{reserve.actionRequise}</p>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+              <Camera className="w-4 h-4" />Photos (Avant / Après)
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {["Photo avant", "Photo après"].map((label) => (
+                <div key={label} className="aspect-video bg-slate-100 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center">
+                  <div className="text-center">
+                    <Camera className="w-6 h-6 text-slate-400 mx-auto mb-1" />
+                    <p className="text-xs text-slate-400">{label}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />Commentaires ({mockComments.length})
+            </p>
+            <div className="space-y-2">
+              {mockComments.map((c, i) => (
+                <div key={i} className="bg-slate-50 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold text-slate-700">{c.author}</span>
+                    <span className="text-xs text-slate-400">{c.date}</span>
+                  </div>
+                  <p className="text-xs text-slate-600">{c.text}</p>
+                </div>
+              ))}
+              <Textarea placeholder="Ajouter un commentaire..." rows={2} className="text-sm" />
+            </div>
           </div>
         </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-slate-700">Action Requise</Label>
-          <Textarea
-            placeholder="Décrire l'action corrective à réaliser…"
-            className="text-sm resize-none"
-            rows={3}
-          />
-        </div>
-      </div>
-
-      <DialogFooter className="flex flex-row gap-2 mt-2">
-        <DialogClose asChild>
-          <Button variant="outline" size="sm" className="flex-1" onClick={onClose}>
-            Annuler
+        <DialogFooter className="mt-4 flex flex-wrap gap-2">
+          <Button variant="outline" onClick={onClose}>Fermer</Button>
+          <Button variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50">Demander vérification</Button>
+          <Button className="bg-green-600 hover:bg-green-700 text-white">
+            <CheckCircle2 className="w-4 h-4 mr-1.5" />Lever la réserve
           </Button>
-        </DialogClose>
-        <Button size="sm" className="flex-1 bg-red-600 hover:bg-red-700 text-white">
-          <Plus className="w-3.5 h-3.5 mr-1.5" />
-          Créer la Réserve
-        </Button>
-      </DialogFooter>
-    </DialogContent>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ReservesPage() {
-  const [activeView, setActiveView] = useState<"table" | "kanban">("table")
+  const [view, setView] = useState<"table" | "kanban">("table")
+  const [filterLot, setFilterLot] = useState("all")
+  const [filterGravite, setFilterGravite] = useState("all")
+  const [filterStatut, setFilterStatut] = useState("all")
+  const [filterType, setFilterType] = useState("all")
   const [selectedReserve, setSelectedReserve] = useState<Reserve | null>(null)
-  const [showNewModal, setShowNewModal] = useState(false)
+  const [newReserveOpen, setNewReserveOpen] = useState(false)
 
-  // Filters
-  const [filterLot, setFilterLot] = useState<string>("all")
-  const [filterLocal, setFilterLocal] = useState("")
-  const [filterGravite, setFilterGravite] = useState<string>("all")
-  const [filterStatut, setFilterStatut] = useState<string>("all")
-  const [filterType, setFilterType] = useState<string>("all")
-
-  const allTypes = Array.from(new Set(RESERVES.map((r) => r.type))).sort()
-
-  const filtered = RESERVES.filter((r) => {
+  const filtered = mockReserves.filter((r) => {
     if (filterLot !== "all" && r.lot !== filterLot) return false
-    if (filterLocal && !r.local.toLowerCase().includes(filterLocal.toLowerCase())) return false
     if (filterGravite !== "all" && r.gravite !== filterGravite) return false
     if (filterStatut !== "all" && r.statut !== filterStatut) return false
     if (filterType !== "all" && r.type !== filterType) return false
@@ -697,13 +392,14 @@ export default function ReservesPage() {
   })
 
   const stats = {
-    total: RESERVES.length,
-    critiques: RESERVES.filter((r) => r.gravite === "critique").length,
-    enRetard: RESERVES.filter(
-      (r) => r.statut !== "closed" && r.joursOuverts > 7
-    ).length,
-    leveesCeMois: RESERVES.filter((r) => r.statut === "closed").length,
+    total: mockReserves.length,
+    critiques: mockReserves.filter((r) => r.gravite === "critique").length,
+    enRetard: mockReserves.filter((r) => r.joursOuverts > 30 && r.statut !== "Levée").length,
+    leveesMonth: mockReserves.filter((r) => r.statut === "Levée").length,
   }
+
+  const hasFilters = filterLot !== "all" || filterGravite !== "all" || filterStatut !== "all" || filterType !== "all"
+  const uniqueTypes = [...new Set(mockReserves.map((r) => r.type))]
 
   return (
     <div className="p-4 lg:p-6 space-y-5">
@@ -714,325 +410,193 @@ export default function ReservesPage() {
             <AlertTriangle className="w-5 h-5 text-red-500" />
             Registre des Réserves
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Suivi des réserves et non-conformités chantier
-          </p>
+          <p className="text-sm text-slate-500 mt-0.5">Réserves & Non-Conformités — Polyclinique Cité Nassib</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
-            <FileText className="w-3.5 h-3.5" />
-            Export PDF
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <Download className="w-4 h-4" />PDF
           </Button>
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
-            <Download className="w-3.5 h-3.5" />
-            Export Excel
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <Download className="w-4 h-4" />Excel
           </Button>
-          <Dialog open={showNewModal} onOpenChange={setShowNewModal}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-8 text-xs bg-red-600 hover:bg-red-700 text-white gap-1.5">
-                <Plus className="w-3.5 h-3.5" />
-                Nouvelle Réserve
-              </Button>
-            </DialogTrigger>
-            <NewReserveModal onClose={() => setShowNewModal(false)} />
-          </Dialog>
+          <Button size="sm" className="gap-1.5" onClick={() => setNewReserveOpen(true)}>
+            <Plus className="w-4 h-4" />Nouvelle Réserve
+          </Button>
         </div>
       </div>
 
-      {/* Stats cards */}
+      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="bg-white shadow-sm border border-slate-200">
-          <CardContent className="p-4">
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Total</p>
-            <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
-            <p className="text-xs text-slate-400 mt-0.5">réserves actives</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white shadow-sm border border-red-100">
-          <CardContent className="p-4">
-            <p className="text-xs text-red-500 font-medium uppercase tracking-wide mb-1">Critiques</p>
-            <p className="text-2xl font-bold text-red-600">{stats.critiques}</p>
-            <p className="text-xs text-slate-400 mt-0.5">action immédiate</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white shadow-sm border border-orange-100">
-          <CardContent className="p-4">
-            <p className="text-xs text-orange-500 font-medium uppercase tracking-wide mb-1">En retard</p>
-            <p className="text-2xl font-bold text-orange-600">{stats.enRetard}</p>
-            <p className="text-xs text-slate-400 mt-0.5">délai dépassé</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white shadow-sm border border-green-100">
-          <CardContent className="p-4">
-            <p className="text-xs text-green-600 font-medium uppercase tracking-wide mb-1">Levées ce mois</p>
-            <p className="text-2xl font-bold text-green-600">{stats.leveesCeMois}</p>
-            <p className="text-xs text-slate-400 mt-0.5">en janvier 2026</p>
-          </CardContent>
-        </Card>
+        {[
+          { label: "Total", value: stats.total, color: "text-slate-700", bg: "bg-slate-50", Icon: AlertTriangle },
+          { label: "Critiques", value: stats.critiques, color: "text-red-700", bg: "bg-red-50", Icon: AlertTriangle },
+          { label: "En retard", value: stats.enRetard, color: "text-orange-700", bg: "bg-orange-50", Icon: Clock },
+          { label: "Levées ce mois", value: stats.leveesMonth, color: "text-green-700", bg: "bg-green-50", Icon: CheckCircle2 },
+        ].map(({ label, value, color, bg, Icon }) => (
+          <Card key={label} className={`${bg} border-0 shadow-sm`}>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-500">{label}</p>
+                <p className={`text-2xl font-bold ${color}`}>{value}</p>
+              </div>
+              <Icon className={`w-6 h-6 ${color} opacity-40`} />
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Filter bar */}
-      <Card className="bg-white shadow-sm border border-slate-200">
-        <CardContent className="p-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400 flex-shrink-0" />
-            <Select value={filterLot} onValueChange={setFilterLot}>
-              <SelectTrigger className="h-8 w-24 text-xs">
-                <SelectValue placeholder="Lot" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous lots</SelectItem>
-                {["GC", "CFO", "CVC", "PLB", "FLU", "CF", "REV", "PEI"].map((l) => (
-                  <SelectItem key={l} value={l}>{l}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="Local / Zone…"
-              value={filterLocal}
-              onChange={(e) => setFilterLocal(e.target.value)}
-              className="h-8 w-40 text-xs"
-            />
-            <Select value={filterGravite} onValueChange={setFilterGravite}>
-              <SelectTrigger className="h-8 w-32 text-xs">
-                <SelectValue placeholder="Gravité" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes gravités</SelectItem>
-                <SelectItem value="critique">Critique</SelectItem>
-                <SelectItem value="majeure">Majeure</SelectItem>
-                <SelectItem value="mineure">Mineure</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterStatut} onValueChange={setFilterStatut}>
-              <SelectTrigger className="h-8 w-36 text-xs">
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous statuts</SelectItem>
-                <SelectItem value="open">Ouverte</SelectItem>
-                <SelectItem value="in_progress">En Cours</SelectItem>
-                <SelectItem value="resolved">Corrigée</SelectItem>
-                <SelectItem value="contested">À Vérifier</SelectItem>
-                <SelectItem value="closed">Levée</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="h-8 w-40 text-xs">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous types</SelectItem>
-                {allTypes.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="ml-auto flex items-center gap-1">
-              <span className="text-xs text-slate-400 mr-1">{filtered.length} résultats</span>
-              <Button
-                variant={activeView === "table" ? "default" : "outline"}
-                size="sm"
-                className="h-8 px-2.5"
-                onClick={() => setActiveView("table")}
-              >
-                <Table2 className="w-3.5 h-3.5 mr-1" />
-                <span className="text-xs">Table</span>
-              </Button>
-              <Button
-                variant={activeView === "kanban" ? "default" : "outline"}
-                size="sm"
-                className="h-8 px-2.5"
-                onClick={() => setActiveView("kanban")}
-              >
-                <Columns className="w-3.5 h-3.5 mr-1" />
-                <span className="text-xs">Kanban</span>
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filter bar + View toggle */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="flex items-center gap-1.5 flex-wrap flex-1">
+          <Filter className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <Select value={filterLot} onValueChange={setFilterLot}>
+            <SelectTrigger className="h-8 text-xs w-28"><SelectValue placeholder="Lot" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les lots</SelectItem>
+              {allLots.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterGravite} onValueChange={setFilterGravite}>
+            <SelectTrigger className="h-8 text-xs w-32"><SelectValue placeholder="Gravité" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes gravités</SelectItem>
+              <SelectItem value="critique">Critique</SelectItem>
+              <SelectItem value="majeure">Majeure</SelectItem>
+              <SelectItem value="mineure">Mineure</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterStatut} onValueChange={setFilterStatut}>
+            <SelectTrigger className="h-8 text-xs w-32"><SelectValue placeholder="Statut" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous statuts</SelectItem>
+              {KANBAN_COLUMNS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Type" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous types</SelectItem>
+              {uniqueTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {hasFilters && (
+            <button
+              onClick={() => { setFilterLot("all"); setFilterGravite("all"); setFilterStatut("all"); setFilterType("all") }}
+              className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1"
+            >
+              <X className="w-3.5 h-3.5" />Effacer
+            </button>
+          )}
+        </div>
+        <div className="flex items-center border rounded-lg overflow-hidden flex-shrink-0">
+          <button
+            onClick={() => setView("table")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${view === "table" ? "bg-slate-800 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+          >
+            <LayoutList className="w-3.5 h-3.5" />Table
+          </button>
+          <button
+            onClick={() => setView("kanban")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${view === "kanban" ? "bg-slate-800 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+          >
+            <Columns3 className="w-3.5 h-3.5" />Kanban
+          </button>
+        </div>
+      </div>
 
-      {/* Table view */}
-      {activeView === "table" && (
-        <Card className="bg-white shadow-sm border border-slate-200 overflow-hidden">
+      {/* Table View */}
+      {view === "table" && (
+        <Card className="shadow-sm border border-slate-200">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
-                  {["N°", "Date", "Local", "Lot", "Description", "Gravité", "Type", "Responsable", "Échéance", "Statut", ""].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap"
-                      >
-                        {h}
-                      </th>
-                    )
-                  )}
+                  {["N°", "Date", "Local", "Lot", "Description", "Gravité", "Type", "Responsable", "Échéance", "Statut", ""].map((h) => (
+                    <th key={h} className="text-left px-3 py-2.5 text-xs font-semibold text-slate-600 whitespace-nowrap">{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={11} className="px-3 py-8 text-center text-sm text-slate-400">
-                      Aucune réserve ne correspond aux filtres sélectionnés.
+                {filtered.map((r, idx) => (
+                  <tr
+                    key={r.id}
+                    className={`border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors ${idx % 2 !== 0 ? "bg-slate-50/40" : ""} ${r.gravite === "critique" && r.statut !== "Levée" ? "bg-red-50/30 hover:bg-red-50/50" : ""}`}
+                    onClick={() => setSelectedReserve(r)}
+                  >
+                    <td className="px-3 py-2.5 font-mono text-xs text-slate-500 whitespace-nowrap">{r.numero}</td>
+                    <td className="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap">{r.date}</td>
+                    <td className="px-3 py-2.5 text-xs text-slate-700 max-w-[140px] truncate">{r.local}</td>
+                    <td className="px-3 py-2.5">
+                      <span className="text-xs font-mono font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">{r.lot}</span>
                     </td>
+                    <td className="px-3 py-2.5 text-xs text-slate-700 max-w-[220px]">
+                      <p className="truncate">{r.description}</p>
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap"><SeverityBadge gravite={r.gravite} /></td>
+                    <td className="px-3 py-2.5 text-xs text-slate-600 whitespace-nowrap">{r.type}</td>
+                    <td className="px-3 py-2.5 text-xs text-slate-600 whitespace-nowrap">{r.responsable}</td>
+                    <td className={`px-3 py-2.5 text-xs whitespace-nowrap font-medium ${r.joursOuverts > 30 && r.statut !== "Levée" ? "text-red-600" : "text-slate-500"}`}>
+                      {r.echeance}
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap"><StatusBadge statut={r.statut} /></td>
+                    <td className="px-3 py-2.5"><ChevronRight className="w-4 h-4 text-slate-300" /></td>
                   </tr>
-                ) : (
-                  filtered.map((r, idx) => (
-                    <tr
-                      key={r.id}
-                      className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${
-                        idx % 2 === 0 ? "" : "bg-slate-50/40"
-                      }`}
-                    >
-                      <td className="px-3 py-2.5 font-mono text-xs font-semibold text-slate-600 whitespace-nowrap">
-                        {r.ref}
-                      </td>
-                      <td className="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap">
-                        {r.date}
-                      </td>
-                      <td className="px-3 py-2.5 text-xs text-slate-700 whitespace-nowrap">
-                        {r.local}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className="text-xs font-semibold bg-slate-100 text-slate-600 rounded px-1.5 py-0.5">
-                          {r.lot}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 text-xs text-slate-700 max-w-[220px]">
-                        <span className="line-clamp-2 leading-relaxed">{r.description}</span>
-                      </td>
-                      <td className="px-3 py-2.5 whitespace-nowrap">
-                        <Badge variant={getGraviteVariant(r.gravite)} className="text-xs">
-                          <GraviteDot gravite={r.gravite} />
-                          {getGraviteLabel(r.gravite)}
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap">
-                        {r.type}
-                      </td>
-                      <td className="px-3 py-2.5 text-xs text-slate-700 whitespace-nowrap">
-                        {r.responsable}
-                      </td>
-                      <td className="px-3 py-2.5 whitespace-nowrap">
-                        <span className={`text-xs font-medium ${
-                          r.statut !== "closed" && r.joursOuverts > 7
-                            ? "text-red-600"
-                            : "text-slate-500"
-                        }`}>
-                          {r.statut !== "closed" && r.joursOuverts > 7 && (
-                            <Clock className="w-3 h-3 inline mr-0.5" />
-                          )}
-                          {r.echeance}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 whitespace-nowrap">
-                        <Badge variant={getStatusVariant(r.statut)} className="text-xs">
-                          {getStatusLabel(r.statut)}
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <button
-                              className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
-                              onClick={() => setSelectedReserve(r)}
-                              title="Voir détail"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                          </DialogTrigger>
-                          {selectedReserve?.id === r.id && (
-                            <ReserveDetailModal
-                              reserve={selectedReserve}
-                              onClose={() => setSelectedReserve(null)}
-                            />
-                          )}
-                        </Dialog>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
+            {filtered.length === 0 && (
+              <div className="text-center py-12 text-slate-400 text-sm">Aucune réserve trouvée avec ces filtres.</div>
+            )}
+          </div>
+          <div className="px-4 py-2.5 border-t border-slate-100 text-xs text-slate-500">
+            {filtered.length} réserve{filtered.length !== 1 ? "s" : ""} affichée{filtered.length !== 1 ? "s" : ""}
           </div>
         </Card>
       )}
 
-      {/* Kanban view */}
-      {activeView === "kanban" && (
+      {/* Kanban View */}
+      {view === "kanban" && (
         <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {KANBAN_COLUMNS.map((col) => {
-            const colItems = filtered.filter((r) => r.statut === col.statut)
+            const items = filtered.filter((r) => r.statut === col)
             return (
-              <div key={col.statut} className={`rounded-xl border-2 ${col.color} p-2 min-h-[200px]`}>
-                {/* Column header */}
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                    {col.label}
-                  </span>
-                  <span className="text-xs font-semibold bg-white rounded-full w-5 h-5 flex items-center justify-center text-slate-600 shadow-sm border border-slate-200">
-                    {colItems.length}
-                  </span>
+              <div key={col} className="space-y-2">
+                <div className={`rounded-lg border px-3 py-2 ${kanbanColors[col]}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-700">{col}</span>
+                    <span className="text-xs font-bold text-slate-600 bg-white rounded-full px-1.5 py-0.5">{items.length}</span>
+                  </div>
                 </div>
-                {/* Cards */}
-                <div className="space-y-2">
-                  {colItems.length === 0 ? (
-                    <div className="text-xs text-slate-400 text-center py-6 italic">
-                      Aucune réserve
-                    </div>
-                  ) : (
-                    colItems.map((r) => (
-                      <Dialog key={r.id}>
-                        <DialogTrigger asChild>
-                          <div
-                            className="bg-white border border-slate-200 rounded-lg p-2.5 shadow-sm cursor-pointer hover:shadow-md hover:border-slate-300 transition-all"
-                            onClick={() => setSelectedReserve(r)}
-                          >
-                            <div className="flex items-start justify-between gap-1 mb-1.5">
-                              <span className="text-xs font-mono font-semibold text-slate-500">
-                                {r.ref}
-                              </span>
-                              <Badge
-                                variant={getGraviteVariant(r.gravite)}
-                                className="text-[10px] px-1.5 py-0"
-                              >
-                                {getGraviteLabel(r.gravite)}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-slate-700 font-medium leading-snug line-clamp-2 mb-2">
-                              {r.description}
-                            </p>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-semibold bg-slate-100 text-slate-500 rounded px-1.5 py-0.5">
-                                {r.lot}
-                              </span>
-                              <span className={`text-[10px] flex items-center gap-0.5 ${
-                                r.joursOuverts > 7 ? "text-red-500 font-semibold" : "text-slate-400"
-                              }`}>
-                                <Clock className="w-2.5 h-2.5" />
-                                {r.joursOuverts}j
-                              </span>
-                            </div>
-                          </div>
-                        </DialogTrigger>
-                        {selectedReserve?.id === r.id && (
-                          <ReserveDetailModal
-                            reserve={r}
-                            onClose={() => setSelectedReserve(null)}
-                          />
-                        )}
-                      </Dialog>
-                    ))
-                  )}
+                <div className="space-y-2 min-h-[100px]">
+                  {items.map((r) => (
+                    <Card key={r.id} className="shadow-sm cursor-pointer hover:shadow-md transition-shadow border-slate-200" onClick={() => setSelectedReserve(r)}>
+                      <CardContent className="p-3 space-y-2">
+                        <div className="flex items-start justify-between gap-1">
+                          <span className="text-xs font-mono text-slate-500">{r.numero}</span>
+                          <SeverityBadge gravite={r.gravite} />
+                        </div>
+                        <p className="text-xs text-slate-700 line-clamp-2 leading-snug">{r.description}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-slate-400 font-mono">{r.lot}</span>
+                          {r.joursOuverts > 0 && (
+                            <span className={`text-xs font-medium flex items-center gap-0.5 ${r.joursOuverts > 30 ? "text-red-600" : "text-slate-500"}`}>
+                              <Clock className="w-3 h-3" />{r.joursOuverts}j
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </div>
             )
           })}
         </div>
       )}
+
+      {/* Modals */}
+      <NewReserveModal open={newReserveOpen} onClose={() => setNewReserveOpen(false)} />
+      <ReserveDetailModal reserve={selectedReserve} onClose={() => setSelectedReserve(null)} />
     </div>
   )
 }

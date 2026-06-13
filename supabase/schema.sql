@@ -1,10 +1,8 @@
 -- =============================================================================
--- Polyclinique Construction Management - Complete Database Schema
--- Compatible with PostgreSQL 17 / Supabase
+-- POLYCLINIQUE CONSTRUCTION MANAGEMENT - COMPLETE DATABASE SCHEMA
+-- PostgreSQL 17 compatible
+-- Generated: 2026-06-13
 -- =============================================================================
-
--- Enable UUID extension (already enabled in Supabase by default)
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- =============================================================================
 -- 1. PROJECTS
@@ -87,8 +85,7 @@ CREATE TABLE IF NOT EXISTS chantier_task_dependencies (
   depends_on_id UUID REFERENCES chantier_tasks(id) ON DELETE CASCADE,
   type TEXT DEFAULT 'FS' CHECK (type IN ('FS','SS','FF','SF')),
   lag_days INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- =============================================================================
@@ -410,9 +407,8 @@ CREATE TABLE IF NOT EXISTS chantier_notifications (
 );
 
 -- =============================================================================
--- ROW LEVEL SECURITY
+-- ROW LEVEL SECURITY - ENABLE ON ALL TABLES
 -- =============================================================================
-
 ALTER TABLE chantier_projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chantier_lots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chantier_tasks ENABLE ROW LEVEL SECURITY;
@@ -433,7 +429,10 @@ ALTER TABLE chantier_risks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chantier_fluid_systems ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chantier_notifications ENABLE ROW LEVEL SECURITY;
 
--- Allow authenticated users to do everything (can be restricted by role later)
+-- =============================================================================
+-- RLS POLICIES - Authenticated users can do everything
+-- (Restrict by role in production as needed)
+-- =============================================================================
 CREATE POLICY "authenticated_all" ON chantier_projects FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "authenticated_all" ON chantier_lots FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "authenticated_all" ON chantier_tasks FOR ALL TO authenticated USING (true) WITH CHECK (true);
@@ -455,50 +454,31 @@ CREATE POLICY "authenticated_all" ON chantier_fluid_systems FOR ALL TO authentic
 CREATE POLICY "authenticated_all" ON chantier_notifications FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- =============================================================================
--- UPDATED_AT TRIGGER FUNCTION
+-- INDEXES FOR PERFORMANCE
 -- =============================================================================
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Apply updated_at triggers to all tables that have the column
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_projects
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_lots
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_tasks
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_task_dependencies
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_zones
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_rooms
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_reservations
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_documents
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_equipment
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_procurements
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_boq_items
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_payment_requests
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_meetings
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_meeting_actions
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_daily_reports
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_tests
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_risks
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON chantier_fluid_systems
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE INDEX IF NOT EXISTS idx_lots_project_id ON chantier_lots(project_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON chantier_tasks(project_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_lot_id ON chantier_tasks(lot_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON chantier_tasks(parent_id);
+CREATE INDEX IF NOT EXISTS idx_task_deps_task_id ON chantier_task_dependencies(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_deps_depends_on ON chantier_task_dependencies(depends_on_id);
+CREATE INDEX IF NOT EXISTS idx_zones_project_id ON chantier_zones(project_id);
+CREATE INDEX IF NOT EXISTS idx_rooms_zone_id ON chantier_rooms(zone_id);
+CREATE INDEX IF NOT EXISTS idx_rooms_project_id ON chantier_rooms(project_id);
+CREATE INDEX IF NOT EXISTS idx_reservations_project_id ON chantier_reservations(project_id);
+CREATE INDEX IF NOT EXISTS idx_reservations_status ON chantier_reservations(status);
+CREATE INDEX IF NOT EXISTS idx_documents_project_id ON chantier_documents(project_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_project_id ON chantier_equipment(project_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_zone_id ON chantier_equipment(zone_id);
+CREATE INDEX IF NOT EXISTS idx_procurements_project_id ON chantier_procurements(project_id);
+CREATE INDEX IF NOT EXISTS idx_boq_project_id ON chantier_boq_items(project_id);
+CREATE INDEX IF NOT EXISTS idx_payment_project_id ON chantier_payment_requests(project_id);
+CREATE INDEX IF NOT EXISTS idx_meetings_project_id ON chantier_meetings(project_id);
+CREATE INDEX IF NOT EXISTS idx_meeting_actions_meeting_id ON chantier_meeting_actions(meeting_id);
+CREATE INDEX IF NOT EXISTS idx_daily_reports_project_id ON chantier_daily_reports(project_id);
+CREATE INDEX IF NOT EXISTS idx_daily_reports_date ON chantier_daily_reports(report_date);
+CREATE INDEX IF NOT EXISTS idx_tests_project_id ON chantier_tests(project_id);
+CREATE INDEX IF NOT EXISTS idx_risks_project_id ON chantier_risks(project_id);
+CREATE INDEX IF NOT EXISTS idx_fluid_systems_project_id ON chantier_fluid_systems(project_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_project_id ON chantier_notifications(project_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON chantier_notifications(is_read);

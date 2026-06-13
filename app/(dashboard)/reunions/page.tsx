@@ -1,17 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import {
+  Calendar,
+  List,
+  Plus,
+  Users,
+  ClipboardList,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  MapPin,
+  User,
+  FileDown,
+  X,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -19,860 +30,939 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Plus,
-  Calendar,
-  List,
-  Users,
-  CheckSquare,
-  Clock,
-  AlertTriangle,
-  FileText,
-  Download,
-  MapPin,
-  CalendarDays,
-} from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
-type DecisionStatus = "En cours" | "En retard" | "Terminé";
-type MeetingStatus = "terminée" | "planifiée";
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 type MeetingType = "Réunion chantier" | "Coordination" | "Technique" | "Réception";
+type MeetingStatus = "terminée" | "planifiée";
+type ActionStatus = "en_cours" | "terminé" | "en_retard";
 
-interface Decision {
+interface Action {
+  id: string;
   desc: string;
   resp: string;
-  deadline: string;
-  status: DecisionStatus;
+  date: string;
+  statut: ActionStatus;
 }
 
 interface Meeting {
-  id: number;
+  id: string;
   title: string;
   date: string;
   type: MeetingType;
   status: MeetingStatus;
-  participants: number;
-  actions: number;
+  participants: string[];
+  nbParticipants: number;
+  nbActions: number;
   lieu: string;
+  animateur: string;
   agenda: string[];
-  decisions: Decision[];
-  participantsList: string[];
+  decisions: string[];
+  actions: Action[];
 }
 
-const meetings: Meeting[] = [
+// ─── Mock Data ────────────────────────────────────────────────────────────────
+
+const MEETINGS: Meeting[] = [
   {
-    id: 1,
+    id: "R24",
     title: "Réunion hebdomadaire N°24",
     date: "09/06/2026",
     type: "Réunion chantier",
     status: "terminée",
-    participants: 8,
-    actions: 5,
+    participants: [
+      "M. Benali (MOA)",
+      "Mme Ouali (Architecte)",
+      "M. Hamdani (CVC)",
+      "M. Tlemçani (GC)",
+      "M. Aïssaoui (CFO)",
+      "Mme Karim (CFA)",
+      "M. Meziane (PLB)",
+      "M. Farid (coord)",
+    ],
+    nbParticipants: 8,
+    nbActions: 4,
     lieu: "Salle de réunion chantier",
+    animateur: "M. Farid",
     agenda: [
-      "Avancement travaux gros œuvre",
-      "Point CVC et fluides",
-      "Sécurité chantier",
+      "Point avancement par lot",
+      "Suivi réserves ouvertes",
+      "Approvisionnements en retard",
       "Divers",
     ],
     decisions: [
-      {
-        desc: "Accélération coulage dalle R+1",
-        resp: "SETAB",
-        deadline: "12/06/2026",
-        status: "En cours",
-      },
-      {
-        desc: "Validation plans CVC",
-        resp: "Architecte",
-        deadline: "10/06/2026",
-        status: "En retard",
-      },
-      {
-        desc: "Rapport sécurité hebdo",
-        resp: "Chef chantier",
-        deadline: "13/06/2026",
-        status: "En cours",
-      },
+      "Validation coulage dalle R+1",
+      "Relance fournisseur CTA",
+      "Blocage faux plafond jusqu'à validation MEP",
     ],
-    participantsList: [
-      "Ahmed Ben Salem",
-      "Karim Mansouri",
-      "Sofia Larbi",
-      "Youcef Benali",
-      "Fatima Zohra",
-      "Omar Khelif",
-      "Nassim Boudali",
-      "Rachid Ferhat",
+    actions: [
+      { id: "A01", desc: "Relance fournisseur CTA", resp: "M. Hamdani", date: "12/06/2026", statut: "en_cours" },
+      { id: "A02", desc: "Mise à jour planning GC", resp: "M. Tlemçani", date: "11/06/2026", statut: "terminé" },
+      { id: "A03", desc: "Soumettre plans exéc fluides", resp: "M. Benali", date: "15/06/2026", statut: "en_retard" },
+      { id: "A04", desc: "CR envoyé à tous", resp: "M. Farid", date: "10/06/2026", statut: "terminé" },
     ],
   },
   {
-    id: 2,
+    id: "R23",
     title: "Coordination CVC + Fluides",
     date: "05/06/2026",
     type: "Coordination",
     status: "terminée",
-    participants: 5,
-    actions: 3,
-    lieu: "Bureau technique",
+    participants: [
+      "M. Hamdani (CVC)",
+      "S. Benali (Fluides)",
+      "M. Farid (coord)",
+      "Mme Ouali (Architecte)",
+      "M. Tlemçani (GC)",
+    ],
+    nbParticipants: 5,
+    nbActions: 3,
+    lieu: "Bureau CVC chantier",
+    animateur: "M. Hamdani",
     agenda: [
-      "Revue plans CVC",
-      "Coordination fluides médicaux",
+      "Interface CVC/Fluides médicaux",
+      "Coordination plafonds",
       "Planning essais",
     ],
     decisions: [
-      {
-        desc: "Soumission plans exec CVC",
-        resp: "ClimaMed",
-        deadline: "08/06/2026",
-        status: "Terminé",
-      },
-      {
-        desc: "Commande vannes O2",
-        resp: "MedFluides",
-        deadline: "15/06/2026",
-        status: "En cours",
-      },
-      {
-        desc: "Planning essais pneumatiques",
-        resp: "ClimaMed",
-        deadline: "20/06/2026",
-        status: "En cours",
-      },
+      "Réunion hebdo CVC/Fluides chaque lundi",
+      "Plans interfaces à soumettre avant 15/06",
     ],
-    participantsList: [
-      "Karim Mansouri",
-      "Omar Khelif",
-      "Nassim Boudali",
-      "Mohamed Ait",
-      "Sara Benm",
+    actions: [
+      { id: "A05", desc: "Plans interface CVC/Fluides", resp: "M. Hamdani", date: "15/06/2026", statut: "en_cours" },
+      { id: "A06", desc: "Vérification hauteur faux plafonds R+1", resp: "M. Tlemçani", date: "10/06/2026", statut: "terminé" },
+      { id: "A07", desc: "Note technique fluides médicaux", resp: "S. Benali", date: "20/06/2026", statut: "en_retard" },
     ],
   },
   {
-    id: 3,
+    id: "R22",
     title: "Visite MOA + Architecte",
     date: "28/05/2026",
-    type: "Réception",
+    type: "Réunion chantier",
     status: "terminée",
-    participants: 4,
-    actions: 4,
-    lieu: "Site chantier",
-    agenda: ["Tour de site", "Points bloquants", "Décisions MOA"],
-    decisions: [
-      {
-        desc: "Modification cloisons bloc chirurgie",
-        resp: "Architecte",
-        deadline: "05/06/2026",
-        status: "Terminé",
-      },
-      {
-        desc: "Validation échantillons carrelage",
-        resp: "MOA",
-        deadline: "01/06/2026",
-        status: "Terminé",
-      },
-      {
-        desc: "Reprise enduit couloir RDC",
-        resp: "SETAB",
-        deadline: "10/06/2026",
-        status: "En retard",
-      },
-      {
-        desc: "Mise à jour planning général",
-        resp: "Chef projet",
-        deadline: "03/06/2026",
-        status: "Terminé",
-      },
+    participants: [
+      "M. Benali (MOA)",
+      "Mme Ouali (Architecte)",
+      "M. Farid (coord)",
+      "M. Tlemçani (GC)",
     ],
-    participantsList: [
-      "Ahmed Ben Salem",
-      "Sofia Larbi",
-      "Youcef Benali",
-      "Fatima Zohra",
+    nbParticipants: 4,
+    nbActions: 2,
+    lieu: "Chantier - Bloc obstétrique",
+    animateur: "Mme Ouali",
+    agenda: [
+      "Visite bloc obstétrique",
+      "Points techniques menuiseries",
+      "Validation finitions",
+    ],
+    decisions: [
+      "Changement carrelage salle 12",
+      "Ajout ventilation WC R+1",
+    ],
+    actions: [
+      { id: "A08", desc: "Devis carrelage alternatif salle 12", resp: "M. Tlemçani", date: "05/06/2026", statut: "terminé" },
+      { id: "A09", desc: "Étude ventilation WC R+1", resp: "M. Hamdani", date: "10/06/2026", statut: "terminé" },
     ],
   },
   {
-    id: 4,
+    id: "R25",
     title: "Réunion hebdomadaire N°25",
     date: "16/06/2026",
     type: "Réunion chantier",
     status: "planifiée",
-    participants: 8,
-    actions: 0,
+    participants: [],
+    nbParticipants: 8,
+    nbActions: 0,
     lieu: "Salle de réunion chantier",
-    agenda: ["Avancement travaux", "Point sécurité", "Préparation OPR"],
+    animateur: "M. Farid",
+    agenda: [
+      "Point avancement par lot",
+      "Suivi actions R24",
+      "Revue planning",
+      "Divers",
+    ],
     decisions: [],
-    participantsList: [],
+    actions: [],
   },
   {
-    id: 5,
+    id: "R_OPR",
     title: "Préparation OPR",
     date: "30/06/2026",
     type: "Technique",
     status: "planifiée",
-    participants: 6,
-    actions: 0,
-    lieu: "Bureau MOE",
+    participants: [],
+    nbParticipants: 6,
+    nbActions: 0,
+    lieu: "Salle de conférence",
+    animateur: "M. Benali",
     agenda: [
-      "Liste réserves prévisionnelles",
+      "Liste des OPR à réaliser",
+      "Affectation responsabilités",
       "Planning OPR",
-      "Organisation visites",
     ],
     decisions: [],
-    participantsList: [],
+    actions: [],
   },
 ];
 
-function getMeetingStatusBadge(status: MeetingStatus) {
-  switch (status) {
-    case "terminée":
-      return (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-          Terminée
-        </Badge>
-      );
-    case "planifiée":
-      return (
-        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-          Planifiée
-        </Badge>
-      );
-  }
-}
+// ─── All open actions (statut !== "terminé") ──────────────────────────────────
 
-function getDecisionStatusBadge(status: DecisionStatus) {
-  switch (status) {
-    case "Terminé":
-      return (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-          Terminé
-        </Badge>
-      );
-    case "En cours":
-      return (
-        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-          En cours
-        </Badge>
-      );
-    case "En retard":
-      return (
-        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
-          En retard
-        </Badge>
-      );
-  }
-}
+const ALL_OPEN_ACTIONS: Array<Action & { meetingId: string; meetingTitle: string }> =
+  MEETINGS.flatMap((m) =>
+    m.actions
+      .filter((a) => a.statut !== "terminé")
+      .map((a) => ({ ...a, meetingId: m.id, meetingTitle: m.title }))
+  );
 
-function getMeetingTypeBadge(type: MeetingType) {
-  switch (type) {
-    case "Réunion chantier":
-      return (
-        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-          {type}
-        </Badge>
-      );
-    case "Coordination":
-      return (
-        <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">
-          {type}
-        </Badge>
-      );
-    case "Technique":
-      return (
-        <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">
-          {type}
-        </Badge>
-      );
-    case "Réception":
-      return (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-          {type}
-        </Badge>
-      );
-  }
-}
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const clean = name.replace(/\(.*?\)/g, "").trim();
+  const parts = clean.split(/\s+/);
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
-interface NewMeetingForm {
-  type: string;
-  date: string;
-  heure: string;
-  lieu: string;
-  participants: string;
-  agenda: string;
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info";
+
+function getMeetingTypeBadge(type: MeetingType): { variant: BadgeVariant; label: string } {
+  const map: Record<MeetingType, { variant: BadgeVariant; label: string }> = {
+    "Réunion chantier": { variant: "default", label: "Chantier" },
+    Coordination: { variant: "info", label: "Coordination" },
+    Technique: { variant: "warning", label: "Technique" },
+    Réception: { variant: "secondary", label: "Réception" },
+  };
+  return map[type];
 }
 
-function MeetingDetailDialog({ meeting }: { meeting: Meeting }) {
+function getStatusBadge(status: MeetingStatus): { variant: BadgeVariant; label: string } {
+  if (status === "terminée") return { variant: "success", label: "Terminée" };
+  return { variant: "outline", label: "Planifiée" };
+}
+
+function getActionStatusBadge(statut: ActionStatus): { variant: BadgeVariant; label: string } {
+  if (statut === "terminé") return { variant: "success", label: "Terminé" };
+  if (statut === "en_retard") return { variant: "destructive", label: "En retard" };
+  return { variant: "info", label: "En cours" };
+}
+
+const AVATAR_COLORS = [
+  "bg-blue-100 text-blue-700",
+  "bg-purple-100 text-purple-700",
+  "bg-green-100 text-green-700",
+  "bg-orange-100 text-orange-700",
+  "bg-rose-100 text-rose-700",
+  "bg-teal-100 text-teal-700",
+  "bg-indigo-100 text-indigo-700",
+  "bg-amber-100 text-amber-700",
+];
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  iconBg: string;
+  iconColor: string;
+}
+
+function StatCard({ icon, label, value, iconBg, iconColor }: StatCardProps) {
   return (
-    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle className="text-xl">{meeting.title}</DialogTitle>
-      </DialogHeader>
-
-      <div className="space-y-6">
-        {/* Header info */}
-        <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-          <div className="flex items-center gap-1">
-            <CalendarDays className="h-4 w-4" />
-            <span>{meeting.date}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <MapPin className="h-4 w-4" />
-            <span>{meeting.lieu}</span>
-          </div>
-          <div>{getMeetingTypeBadge(meeting.type)}</div>
-          <div>{getMeetingStatusBadge(meeting.status)}</div>
-        </div>
-
-        {/* Participants */}
-        {meeting.participantsList.length > 0 && (
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-3">
-              Participants ({meeting.participantsList.length})
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {meeting.participantsList.map((p, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1">
-                  <div className="w-7 h-7 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-medium flex-shrink-0">
-                    {getInitials(p)}
-                  </div>
-                  <span className="text-sm text-gray-700">{p}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Agenda */}
-        <div>
-          <h3 className="font-semibold text-gray-900 mb-3">Ordre du jour</h3>
-          <ol className="space-y-1">
-            {meeting.agenda.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-800 text-xs flex items-center justify-center font-medium mt-0.5">
-                  {idx + 1}
-                </span>
-                {item}
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        {/* Decisions & Actions */}
-        {meeting.decisions.length > 0 && (
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-3">
-              Décisions &amp; Actions
-            </h3>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Responsable</TableHead>
-                    <TableHead>Date limite</TableHead>
-                    <TableHead>Statut</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {meeting.decisions.map((d, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell className="text-sm">{d.desc}</TableCell>
-                      <TableCell className="text-sm font-medium">{d.resp}</TableCell>
-                      <TableCell className="text-sm">{d.deadline}</TableCell>
-                      <TableCell>{getDecisionStatusBadge(d.status)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        )}
-
-        {/* Export button */}
-        <div className="flex justify-end pt-2 border-t">
-          <Button variant="outline" className="gap-2">
-            <Download className="h-4 w-4" />
-            Exporter CR PDF
-          </Button>
-        </div>
+    <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-4 flex items-center gap-4">
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${iconBg}`}>
+        <span className={iconColor}>{icon}</span>
       </div>
-    </DialogContent>
+      <div>
+        <p className="text-2xl font-bold text-slate-800">{value}</p>
+        <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+      </div>
+    </div>
   );
 }
 
-export default function ReunionsPage() {
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
-  const [isNewMeetingOpen, setIsNewMeetingOpen] = useState(false);
-  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
-  const [form, setForm] = useState<NewMeetingForm>({
-    type: "",
-    date: "",
-    heure: "",
-    lieu: "",
-    participants: "",
-    agenda: "",
-  });
+interface MeetingCardProps {
+  meeting: Meeting;
+  onClick: () => void;
+}
 
-  // Collect all open actions
-  const openActions: Array<{
-    meetingTitle: string;
-    decision: Decision;
-  }> = [];
-  for (const m of meetings) {
-    for (const d of m.decisions) {
-      if (d.status === "En cours" || d.status === "En retard") {
-        openActions.push({ meetingTitle: m.title, decision: d });
-      }
-    }
-  }
+function MeetingCard({ meeting, onClick }: MeetingCardProps) {
+  const typeBadge = getMeetingTypeBadge(meeting.type);
+  const statusBadge = getStatusBadge(meeting.status);
 
-  function handleFormChange(field: keyof NewMeetingForm, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  }
+  return (
+    <div
+      onClick={onClick}
+      className="bg-white border border-slate-200 shadow-sm rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all"
+    >
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant={typeBadge.variant}>{typeBadge.label}</Badge>
+          <Badge variant={statusBadge.variant} className="flex items-center gap-1">
+            {statusBadge.label === "Terminée" ? (
+              <CheckCircle2 className="w-3 h-3" />
+            ) : (
+              <Clock className="w-3 h-3" />
+            )}
+            {statusBadge.label}
+          </Badge>
+        </div>
+        <span className="text-xs text-slate-400 font-medium">{meeting.id}</span>
+      </div>
 
-  function handleNewMeetingSubmit(e: React.FormEvent) {
+      <h3 className="mt-3 text-sm font-semibold text-slate-800 leading-snug">
+        {meeting.title}
+      </h3>
+
+      <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
+        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+        <span>{meeting.date}</span>
+        <span className="mx-1 text-slate-300">•</span>
+        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+        <span className="truncate">{meeting.lieu}</span>
+      </div>
+
+      <Separator className="my-3" />
+
+      <div className="flex items-center gap-4 text-xs text-slate-500">
+        <span className="flex items-center gap-1">
+          <Users className="w-3.5 h-3.5 text-slate-400" />
+          {meeting.nbParticipants} participant{meeting.nbParticipants !== 1 ? "s" : ""}
+        </span>
+        {meeting.nbActions > 0 && (
+          <span className="flex items-center gap-1">
+            <ClipboardList className="w-3.5 h-3.5 text-slate-400" />
+            {meeting.nbActions} action{meeting.nbActions !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface CardViewProps {
+  meetings: Meeting[];
+  onSelect: (m: Meeting) => void;
+}
+
+function CardView({ meetings, onSelect }: CardViewProps) {
+  const upcoming = meetings.filter((m) => m.status === "planifiée");
+  const past = meetings.filter((m) => m.status === "terminée");
+
+  return (
+    <div className="space-y-5">
+      {upcoming.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+            À venir
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {upcoming.map((m) => (
+              <MeetingCard key={m.id} meeting={m} onClick={() => onSelect(m)} />
+            ))}
+          </div>
+        </div>
+      )}
+      {past.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+            Passées
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {past.map((m) => (
+              <MeetingCard key={m.id} meeting={m} onClick={() => onSelect(m)} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface ListViewProps {
+  meetings: Meeting[];
+  onSelect: (m: Meeting) => void;
+}
+
+function ListView({ meetings, onSelect }: ListViewProps) {
+  return (
+    <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-slate-50 border-b border-slate-200">
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Réunion
+            </th>
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">
+              Type
+            </th>
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">
+              Date
+            </th>
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">
+              Lieu
+            </th>
+            <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">
+              Actions
+            </th>
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Statut
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {meetings.map((m, idx) => {
+            const typeBadge = getMeetingTypeBadge(m.type);
+            const statusBadge = getStatusBadge(m.status);
+            return (
+              <tr
+                key={m.id}
+                onClick={() => onSelect(m)}
+                className={`cursor-pointer hover:bg-slate-50 transition-colors ${
+                  idx !== meetings.length - 1 ? "border-b border-slate-100" : ""
+                }`}
+              >
+                <td className="px-4 py-3">
+                  <p className="font-medium text-slate-800">{m.title}</p>
+                  <p className="text-xs text-slate-400">{m.id}</p>
+                </td>
+                <td className="px-4 py-3 hidden sm:table-cell">
+                  <Badge variant={typeBadge.variant}>{typeBadge.label}</Badge>
+                </td>
+                <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
+                  {m.date}
+                </td>
+                <td className="px-4 py-3 text-slate-500 text-xs hidden lg:table-cell">
+                  {m.lieu}
+                </td>
+                <td className="px-4 py-3 text-center hidden md:table-cell">
+                  {m.nbActions > 0 ? (
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
+                      {m.nbActions}
+                    </span>
+                  ) : (
+                    <span className="text-slate-300">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <Badge variant={statusBadge.variant} className="flex items-center gap-1 w-fit">
+                    {statusBadge.label === "Terminée" ? (
+                      <CheckCircle2 className="w-3 h-3" />
+                    ) : (
+                      <Clock className="w-3 h-3" />
+                    )}
+                    {statusBadge.label}
+                  </Badge>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+interface NewMeetingModalProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+function NewMeetingModal({ open, onClose }: NewMeetingModalProps) {
+  const [type, setType] = useState<string>("");
+  const [date, setDate] = useState("");
+  const [heure, setHeure] = useState("");
+  const [lieu, setLieu] = useState("");
+  const [participants, setParticipants] = useState("");
+  const [agenda, setAgenda] = useState("");
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setIsNewMeetingOpen(false);
-    setForm({
-      type: "",
-      date: "",
-      heure: "",
-      lieu: "",
-      participants: "",
-      agenda: "",
-    });
+    setType("");
+    setDate("");
+    setHeure("");
+    setLieu("");
+    setParticipants("");
+    setAgenda("");
+    onClose();
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Réunions de Chantier
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Gestion des réunions et comptes rendus
-          </p>
-        </div>
-        <Dialog open={isNewMeetingOpen} onOpenChange={setIsNewMeetingOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Nouvelle Réunion
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Nouvelle Réunion</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleNewMeetingSubmit} className="space-y-4 mt-2">
-              <div className="space-y-1">
-                <Label htmlFor="type">Type de réunion</Label>
-                <Select
-                  value={form.type}
-                  onValueChange={(v) => handleFormChange("type", v)}
-                >
-                  <SelectTrigger id="type">
-                    <SelectValue placeholder="Sélectionner un type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Réunion chantier">
-                      Réunion chantier
-                    </SelectItem>
-                    <SelectItem value="Coordination">Coordination</SelectItem>
-                    <SelectItem value="Technique">Technique</SelectItem>
-                    <SelectItem value="Réception">Réception</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Nouvelle Réunion</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="nr-type">Type de réunion</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger id="nr-type" className="w-full">
+                <SelectValue placeholder="Sélectionner un type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Réunion chantier">Réunion chantier</SelectItem>
+                <SelectItem value="Coordination">Coordination</SelectItem>
+                <SelectItem value="Technique">Technique</SelectItem>
+                <SelectItem value="Réception">Réception</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={form.date}
-                    onChange={(e) => handleFormChange("date", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="heure">Heure</Label>
-                  <Input
-                    id="heure"
-                    type="time"
-                    value={form.heure}
-                    onChange={(e) => handleFormChange("heure", e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="lieu">Lieu</Label>
-                <Input
-                  id="lieu"
-                  placeholder="Ex: Salle de réunion chantier"
-                  value={form.lieu}
-                  onChange={(e) => handleFormChange("lieu", e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="participants">
-                  Participants (séparés par des virgules)
-                </Label>
-                <Input
-                  id="participants"
-                  placeholder="Ex: Ahmed Ben Salem, Karim Mansouri"
-                  value={form.participants}
-                  onChange={(e) =>
-                    handleFormChange("participants", e.target.value)
-                  }
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="agenda">Ordre du jour</Label>
-                <Textarea
-                  id="agenda"
-                  placeholder="Entrez les points de l'ordre du jour..."
-                  rows={4}
-                  value={form.agenda}
-                  onChange={(e) => handleFormChange("agenda", e.target.value)}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsNewMeetingOpen(false)}
-                >
-                  Annuler
-                </Button>
-                <Button type="submit">Créer la réunion</Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <FileText className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Total</p>
-                <p className="text-2xl font-bold text-gray-900">18</p>
-              </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="nr-date">Date</Label>
+              <input
+                id="nr-date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+                className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Calendar className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">À venir</p>
-                <p className="text-2xl font-bold text-gray-900">3</p>
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="nr-heure">Heure</Label>
+              <input
+                id="nr-heure"
+                type="time"
+                value={heure}
+                onChange={(e) => setHeure(e.target.value)}
+                required
+                className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <CheckSquare className="h-5 w-5 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Actions en cours</p>
-                <p className="text-2xl font-bold text-gray-900">12</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Actions en retard</p>
-                <p className="text-2xl font-bold text-gray-900">4</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
 
-      {/* Main content tabs */}
-      <Tabs defaultValue="reunions">
-        <div className="flex items-center justify-between mb-4">
-          <TabsList>
-            <TabsTrigger value="reunions">Réunions</TabsTrigger>
-            <TabsTrigger value="actions">Suivi des Actions</TabsTrigger>
-          </TabsList>
+          <div className="space-y-1.5">
+            <Label htmlFor="nr-lieu">Lieu</Label>
+            <input
+              id="nr-lieu"
+              type="text"
+              value={lieu}
+              onChange={(e) => setLieu(e.target.value)}
+              placeholder="Ex: Salle de réunion chantier"
+              required
+              className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-          {/* View toggle */}
-          <div className="flex items-center gap-1 border rounded-md p-1">
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              className="h-7 px-2"
-              onClick={() => setViewMode("list")}
+          <div className="space-y-1.5">
+            <Label htmlFor="nr-participants">Participants</Label>
+            <Textarea
+              id="nr-participants"
+              value={participants}
+              onChange={(e) => setParticipants(e.target.value)}
+              placeholder="Un participant par ligne"
+              rows={3}
+              className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="nr-agenda">Ordre du jour</Label>
+            <Textarea
+              id="nr-agenda"
+              value={agenda}
+              onChange={(e) => setAgenda(e.target.value)}
+              placeholder="Un point par ligne"
+              rows={3}
+              className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+
+          <DialogFooter className="gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
             >
-              <List className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "calendar" ? "default" : "ghost"}
-              size="sm"
-              className="h-7 px-2"
-              onClick={() => setViewMode("calendar")}
+              Annuler
+            </button>
+            <button
+              type="submit"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <Calendar className="h-4 w-4" />
-            </Button>
+              <Plus className="w-4 h-4" />
+              Créer la réunion
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface DetailModalProps {
+  meeting: Meeting | null;
+  onClose: () => void;
+}
+
+function DetailModal({ meeting, onClose }: DetailModalProps) {
+  if (!meeting) return null;
+
+  const typeBadge = getMeetingTypeBadge(meeting.type);
+  const statusBadge = getStatusBadge(meeting.status);
+
+  return (
+    <Dialog open={!!meeting} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b border-slate-100">
+          <DialogHeader>
+            <div className="flex items-center gap-2 flex-wrap mb-2">
+              <Badge variant={typeBadge.variant}>{typeBadge.label}</Badge>
+              <Badge variant={statusBadge.variant} className="flex items-center gap-1">
+                {statusBadge.label === "Terminée" ? (
+                  <CheckCircle2 className="w-3 h-3" />
+                ) : (
+                  <Clock className="w-3 h-3" />
+                )}
+                {statusBadge.label}
+              </Badge>
+              <span className="text-xs text-slate-400 ml-auto">{meeting.id}</span>
+            </div>
+            <DialogTitle className="text-base leading-snug">{meeting.title}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-3 grid grid-cols-2 gap-y-1.5 gap-x-4 text-xs text-slate-600">
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              {meeting.date}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-slate-400" />
+              {meeting.lieu}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-slate-400" />
+              Animateur : {meeting.animateur}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-slate-400" />
+              {meeting.nbParticipants} participants
+            </span>
           </div>
         </div>
 
-        {/* Réunions tab */}
-        <TabsContent value="reunions" className="mt-0">
-          {viewMode === "list" ? (
-            <div className="space-y-3">
-              {meetings.map((meeting) => (
-                <Dialog
-                  key={meeting.id}
-                  open={selectedMeeting?.id === meeting.id}
-                  onOpenChange={(open) => {
-                    if (!open) setSelectedMeeting(null);
-                  }}
-                >
-                  <DialogTrigger asChild>
-                    <Card
-                      className="cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => setSelectedMeeting(meeting)}
-                    >
-                      <CardContent className="pt-4 pb-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-4 flex-1 min-w-0">
-                            {/* Date block */}
-                            <div className="flex-shrink-0 w-14 text-center">
-                              <div className="bg-blue-600 text-white text-xs font-bold rounded-t-md py-1">
-                                {meeting.date.split("/")[1]}/
-                                {meeting.date.split("/")[2].slice(-2)}
-                              </div>
-                              <div className="border border-t-0 rounded-b-md py-1">
-                                <span className="text-lg font-bold text-gray-800">
-                                  {meeting.date.split("/")[0]}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-wrap items-center gap-2 mb-1">
-                                {getMeetingTypeBadge(meeting.type)}
-                              </div>
-                              <h3 className="font-semibold text-gray-900 truncate">
-                                {meeting.title}
-                              </h3>
-                              <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="h-3.5 w-3.5" />
-                                  {meeting.lieu}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Users className="h-3.5 w-3.5" />
-                                  {meeting.participants} participants
-                                </span>
-                                {meeting.actions > 0 && (
-                                  <span className="flex items-center gap-1">
-                                    <CheckSquare className="h-3.5 w-3.5" />
-                                    {meeting.actions} actions
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Status */}
-                          <div className="flex-shrink-0">
-                            {getMeetingStatusBadge(meeting.status)}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </DialogTrigger>
-                  {selectedMeeting?.id === meeting.id && (
-                    <MeetingDetailDialog meeting={meeting} />
-                  )}
-                </Dialog>
-              ))}
-            </div>
-          ) : (
-            /* Calendar view - simplified grid */
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  Juin 2026
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                  {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map(
-                    (d) => (
-                      <div
-                        key={d}
-                        className="text-xs font-medium text-gray-500 py-1"
-                      >
-                        {d}
-                      </div>
-                    )
-                  )}
-                </div>
-                <div className="grid grid-cols-7 gap-1">
-                  {/* Offset for June 2026 starting on Monday */}
-                  {Array.from({ length: 0 }).map((_, i) => (
-                    <div key={`empty-${i}`} />
+        <ScrollArea className="flex-1 px-6 py-4">
+          <div className="space-y-5">
+            {/* Participants */}
+            {meeting.participants.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  Participants
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {meeting.participants.map((p, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Avatar className="w-7 h-7">
+                        <AvatarFallback
+                          className={`text-xs font-semibold ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}
+                        >
+                          {getInitials(p)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs text-slate-700">{p}</span>
+                    </div>
                   ))}
-                  {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => {
-                    const dayStr = String(day).padStart(2, "0");
-                    const dateStr = `${dayStr}/06/2026`;
-                    const dayMeetings = meetings.filter(
-                      (m) => m.date === dateStr
-                    );
-                    return (
-                      <div
-                        key={day}
-                        className={`min-h-[60px] border rounded-md p-1 text-xs ${
-                          dayMeetings.length > 0
-                            ? "bg-blue-50 border-blue-200"
-                            : "border-gray-100"
-                        }`}
-                      >
-                        <span
-                          className={`font-medium ${
-                            dayMeetings.length > 0
-                              ? "text-blue-700"
-                              : "text-gray-500"
-                          }`}
-                        >
-                          {day}
-                        </span>
-                        {dayMeetings.map((m) => (
-                          <div
-                            key={m.id}
-                            className="mt-1 bg-blue-600 text-white rounded px-1 py-0.5 text-[10px] truncate cursor-pointer"
-                            onClick={() => setSelectedMeeting(m)}
-                          >
-                            {m.title}
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
                 </div>
-                {/* Meeting detail dialog for calendar view */}
-                {selectedMeeting && (
-                  <Dialog
-                    open={!!selectedMeeting}
-                    onOpenChange={(open) => {
-                      if (!open) setSelectedMeeting(null);
-                    }}
-                  >
-                    <MeetingDetailDialog meeting={selectedMeeting} />
-                  </Dialog>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Actions tracker tab */}
-        <TabsContent value="actions" className="mt-0">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="h-5 w-5 text-orange-500" />
-                Actions ouvertes ({openActions.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Réunion</TableHead>
-                      <TableHead>Action</TableHead>
-                      <TableHead>Responsable</TableHead>
-                      <TableHead>Date limite</TableHead>
-                      <TableHead>Statut</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {openActions.map((item, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell className="text-sm font-medium text-gray-700 max-w-[200px] truncate">
-                          {item.meetingTitle}
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600">
-                          {item.decision.desc}
-                        </TableCell>
-                        <TableCell className="text-sm font-medium">
-                          {item.decision.resp}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {item.decision.deadline}
-                        </TableCell>
-                        <TableCell>
-                          {getDecisionStatusBadge(item.decision.status)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {openActions.length === 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={5}
-                          className="text-center text-gray-400 py-8"
-                        >
-                          Aucune action ouverte
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            )}
+
+            {/* Agenda */}
+            {meeting.agenda.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  Ordre du jour
+                </h4>
+                <ol className="list-decimal list-inside space-y-1">
+                  {meeting.agenda.map((item, i) => (
+                    <li key={i} className="text-sm text-slate-700">
+                      {item}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* Decisions */}
+            {meeting.decisions.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  Décisions
+                </h4>
+                <ul className="space-y-1.5">
+                  {meeting.decisions.map((d, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                      <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                      {d}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Actions table */}
+            {meeting.actions.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  Actions
+                </h4>
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <th className="text-left px-3 py-2 font-semibold text-slate-500">
+                          Description
+                        </th>
+                        <th className="text-left px-3 py-2 font-semibold text-slate-500 hidden sm:table-cell">
+                          Responsable
+                        </th>
+                        <th className="text-left px-3 py-2 font-semibold text-slate-500 hidden sm:table-cell">
+                          Date limite
+                        </th>
+                        <th className="text-left px-3 py-2 font-semibold text-slate-500">
+                          Statut
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {meeting.actions.map((action, i) => {
+                        const ab = getActionStatusBadge(action.statut);
+                        return (
+                          <tr
+                            key={action.id}
+                            className={
+                              i !== meeting.actions.length - 1
+                                ? "border-b border-slate-100"
+                                : ""
+                            }
+                          >
+                            <td className="px-3 py-2 text-slate-700">{action.desc}</td>
+                            <td className="px-3 py-2 text-slate-600 hidden sm:table-cell">
+                              {action.resp}
+                            </td>
+                            <td className="px-3 py-2 text-slate-500 hidden sm:table-cell">
+                              {action.date}
+                            </td>
+                            <td className="px-3 py-2">
+                              <Badge variant={ab.variant}>{ab.label}</Badge>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+
+        <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              /* Export CR PDF — no-op */
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            <FileDown className="w-4 h-4" />
+            Export CR PDF
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <X className="w-4 h-4" />
+            Fermer
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+export default function ReunionsPage() {
+  const [view, setView] = useState<"cards" | "list">("cards");
+  const [newMeetingOpen, setNewMeetingOpen] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+
+  return (
+    <div className="p-4 lg:p-6 space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-xl font-bold text-slate-800">Réunions de Chantier</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Suivi des réunions et actions du chantier
+          </p>
+        </div>
+        <button
+          onClick={() => setNewMeetingOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Nouvelle Réunion
+        </button>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard
+          icon={<ClipboardList className="w-5 h-5" />}
+          label="Total réunions"
+          value={18}
+          iconBg="bg-blue-50"
+          iconColor="text-blue-600"
+        />
+        <StatCard
+          icon={<Clock className="w-5 h-5" />}
+          label="À venir"
+          value={3}
+          iconBg="bg-purple-50"
+          iconColor="text-purple-600"
+        />
+        <StatCard
+          icon={<CheckCircle2 className="w-5 h-5" />}
+          label="Actions en cours"
+          value={12}
+          iconBg="bg-green-50"
+          iconColor="text-green-600"
+        />
+        <StatCard
+          icon={<AlertTriangle className="w-5 h-5" />}
+          label="Actions en retard"
+          value={4}
+          iconBg="bg-red-50"
+          iconColor="text-red-500"
+        />
+      </div>
+
+      {/* View toggle */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setView("cards")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            view === "cards"
+              ? "bg-blue-600 text-white"
+              : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+          }`}
+        >
+          <Calendar className="w-4 h-4" />
+          Vue cartes
+        </button>
+        <button
+          onClick={() => setView("list")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            view === "list"
+              ? "bg-blue-600 text-white"
+              : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+          }`}
+        >
+          <List className="w-4 h-4" />
+          Vue liste
+        </button>
+      </div>
+
+      {/* Meeting display */}
+      {view === "cards" ? (
+        <CardView meetings={MEETINGS} onSelect={setSelectedMeeting} />
+      ) : (
+        <ListView meetings={MEETINGS} onSelect={setSelectedMeeting} />
+      )}
+
+      {/* Open actions section */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-sm font-semibold text-slate-700">Actions en cours</h2>
+          <Badge variant="info">{ALL_OPEN_ACTIONS.length}</Badge>
+        </div>
+
+        <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Action
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">
+                  Réunion
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">
+                  Responsable
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">
+                  Date limite
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Statut
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {ALL_OPEN_ACTIONS.map((action, idx) => {
+                const ab = getActionStatusBadge(action.statut);
+                return (
+                  <tr
+                    key={action.id}
+                    className={
+                      idx !== ALL_OPEN_ACTIONS.length - 1
+                        ? "border-b border-slate-100"
+                        : ""
+                    }
+                  >
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-slate-800">{action.desc}</p>
+                      <p className="text-xs text-slate-400">{action.id}</p>
+                    </td>
+                    <td className="px-4 py-3 hidden sm:table-cell">
+                      <span className="text-xs text-slate-600">{action.meetingTitle}</span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
+                      {action.resp}
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 hidden md:table-cell">
+                      {action.date}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant={ab.variant}>{ab.label}</Badge>
+                    </td>
+                  </tr>
+                );
+              })}
+              {ALL_OPEN_ACTIONS.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-4 py-8 text-center text-slate-400 text-sm"
+                  >
+                    Aucune action en cours
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Modals */}
+      <NewMeetingModal
+        open={newMeetingOpen}
+        onClose={() => setNewMeetingOpen(false)}
+      />
+      <DetailModal
+        meeting={selectedMeeting}
+        onClose={() => setSelectedMeeting(null)}
+      />
     </div>
   );
 }

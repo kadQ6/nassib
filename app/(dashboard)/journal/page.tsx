@@ -1,708 +1,929 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
   Plus,
+  CheckCircle2,
   Sun,
   Cloud,
   CloudRain,
-  Zap,
-  FileText,
+  CloudLightning,
   Users,
+  MapPin,
   AlertTriangle,
-  CheckCircle,
   Eye,
+  ClipboardList,
+  CalendarDays,
+  Trash2,
+  FileText,
+  ThumbsUp,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Meteo = "Ensoleillé" | "Nuageux" | "Pluvieux" | "Orageux";
 
-interface Effectif {
+type Effectif = {
   entreprise: string;
-  role: string;
-  count: number;
-}
+  effectif: number;
+  qualification: string;
+};
 
-interface DailyReport {
+type DailyReport = {
+  dateKey: string;
   date: string;
   meteo: Meteo;
   temperature: number;
   effectifs: Effectif[];
-  travaux: string;
+  totalEffectif: number;
+  zones: string[];
+  travauxRealises: string;
+  incidents: string;
+  visites: string;
+  instructions: string;
+  blocages: string;
+  redacteur: string;
+};
+
+type FormEffectif = {
+  entreprise: string;
+  effectif: string;
+  qualification: string;
+};
+
+type ReportForm = {
+  date: string;
+  meteo: Meteo | "";
+  temperature: string;
+  effectifs: FormEffectif[];
+  travauxRealises: string;
   zones: string[];
   incidents: string;
   visites: string;
   instructions: string;
   blocages: string;
-}
+};
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
 const INITIAL_REPORTS: DailyReport[] = [
   {
-    date: "2026-06-10",
+    dateKey: "2026-06-10",
+    date: "10/06/2026",
     meteo: "Ensoleillé",
     temperature: 34,
     effectifs: [
-      { entreprise: "SETAB", role: "Ouvriers maçonnerie", count: 15 },
-      { entreprise: "ElecPro", role: "Électriciens", count: 8 },
-      { entreprise: "ClimaMed", role: "Techniciens CVC", count: 4 },
+      { entreprise: "SETAB", effectif: 15, qualification: "Ouvriers GC" },
+      { entreprise: "ElecPro", effectif: 8, qualification: "Électriciens" },
+      { entreprise: "ClimaMed", effectif: 4, qualification: "Techniciens CVC" },
     ],
-    travaux:
+    totalEffectif: 27,
+    zones: ["RDC", "R+1", "Bloc obstétrique"],
+    travauxRealises:
       "Coulage dalle R+1 bloc obstétrique terminé. Installation câblage CFO RDC en cours. Pose CTA sous-sol démarrée.",
-    zones: ["R+1", "RDC", "Sous-sol"],
     incidents:
-      "Chute de matériel mineure (sans blessés), signalée au chef de chantier. Périmètre de sécurité renforcé.",
+      "Chute de matériel mineure (sans blessés), signalée au chef de chantier. Rapport incident établi.",
     visites:
-      "Visite du bureau de contrôle CTC pour inspection fondations. M. Benali (CTC) - 10h00 à 12h00.",
+      "Visite du responsable MOA M. Benali à 14h00. Visite contrôleur technique à 16h30.",
     instructions:
-      "Accélérer coulage dalle R+2 pour rattraper retard planning. Respecter temps de cure 48h.",
-    blocages:
-      "Livraison armatures R+2 prévue le 12/06/2026 retardée au 14/06/2026.",
+      "Reprise jointures béton escalier R+1 avant jeudi. Nettoyage zone B avant coulage.",
+    blocages: "Attente livraison ferraillage pour dalles R+2.",
+    redacteur: "M. Farid",
   },
   {
-    date: "2026-06-09",
+    dateKey: "2026-06-09",
+    date: "09/06/2026",
     meteo: "Nuageux",
     temperature: 28,
     effectifs: [
-      { entreprise: "SETAB", role: "Ouvriers maçonnerie", count: 12 },
-      { entreprise: "ElecPro", role: "Électriciens", count: 6 },
+      { entreprise: "SETAB", effectif: 12, qualification: "Ouvriers GC" },
+      { entreprise: "ElecPro", effectif: 6, qualification: "Électriciens" },
     ],
-    travaux:
-      "Ferraillage dalle R+1 terminé. Mise en place coffrages périphériques. Tirage câbles électriques RDC 60% avancement.",
-    zones: ["R+1", "RDC"],
-    incidents: "Aucun incident.",
-    visites:
-      "Réunion de chantier hebdomadaire N°24. Présence de 8 participants dont MOE, entreprises.",
-    instructions:
-      "Vérifier étanchéité coffrages avant coulage. Préparer bon de commande béton.",
-    blocages: "Manque de personnel ElecPro (2 absents maladie).",
+    totalEffectif: 18,
+    zones: ["RDC", "Sous-sol"],
+    travauxRealises:
+      "Ferraillage voiles RDC zone B. Tirage câbles CFO sous-sol. Essais étanchéité toiture partielle.",
+    incidents: "",
+    visites: "Réunion hebdomadaire de chantier N°24 à 9h00.",
+    instructions: "Mise en place balisage zone décoffrage.",
+    blocages: "",
+    redacteur: "M. Farid",
   },
   {
-    date: "2026-06-05",
-    meteo: "Pluvieux",
-    temperature: 22,
+    dateKey: "2026-06-08",
+    date: "08/06/2026",
+    meteo: "Ensoleillé",
+    temperature: 32,
     effectifs: [
-      { entreprise: "SETAB", role: "Ouvriers maçonnerie", count: 8 },
-      { entreprise: "ClimaMed", role: "Techniciens CVC", count: 6 },
-      { entreprise: "MedFluides", role: "Plombiers", count: 4 },
+      { entreprise: "SETAB", effectif: 14, qualification: "Ouvriers GC" },
+      { entreprise: "ClimaMed", effectif: 6, qualification: "Techniciens CVC" },
+      {
+        entreprise: "FluideMed",
+        effectif: 3,
+        qualification: "Techniciens fluides",
+      },
     ],
-    travaux:
-      "Arrêt maçonnerie cause pluie. Travaux intérieurs: Installation gaines CVC sous-sol. Pose tuyauterie eau froide RDC.",
-    zones: ["Sous-sol", "RDC"],
-    incidents:
-      "Infiltration eau dans sous-sol local technique. Pompage effectué. Investigation cause en cours.",
-    visites:
-      "Coordination CVC + Fluides médicaux. Présence bureau d'études ClimaMed.",
+    totalEffectif: 23,
+    zones: ["R+1", "Bloc opératoire", "Urgences"],
+    travauxRealises:
+      "Pose gaines CVC niveau R+1 bloc opératoire. Installation centrale de traitement d'air (CTA). Réseau plomberie urgences en cours.",
+    incidents: "",
+    visites: "Architecte Mme Ouali - visite coordination 10h00.",
     instructions:
-      "Traiter infiltration avant reprise travaux sous-sol. Contacter étanchéiste.",
+      "Coordination passage gaines CVC/CFO à vérifier avant fermeture faux plafonds.",
     blocages:
-      "Travaux extérieurs arrêtés cause pluie. Retard estimé: 0.5 jour.",
+      "Plans d'exécution fluides médicaux non encore approuvés - travaux partiellement suspendus bloc opératoire.",
+    redacteur: "M. Farid",
   },
 ];
 
-const ALL_ZONES = ["RDC", "R+1", "R+2", "Sous-sol", "Extérieur"];
-
-const MONTH_NAMES = [
-  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
+const ALL_ZONES = [
+  "RDC",
+  "R+1",
+  "R+2",
+  "Sous-sol",
+  "Bloc opératoire",
+  "Bloc obstétrique",
+  "Urgences",
+  "Laboratoire",
 ];
 
-const DAY_NAMES = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+const METEO_OPTIONS: { value: Meteo; emoji: string; label: string }[] = [
+  { value: "Ensoleillé", emoji: "☀️", label: "Ensoleillé" },
+  { value: "Nuageux", emoji: "☁️", label: "Nuageux" },
+  { value: "Pluvieux", emoji: "🌧️", label: "Pluvieux" },
+  { value: "Orageux", emoji: "⛈️", label: "Orageux" },
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+function meteoEmoji(meteo: Meteo): string {
+  const m = METEO_OPTIONS.find((o) => o.value === meteo);
+  return m ? m.emoji : "";
 }
 
-function parseDate(dateStr: string): Date {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function getMeteoIcon(meteo: Meteo) {
+function meteoIcon(meteo: Meteo) {
   switch (meteo) {
     case "Ensoleillé":
-      return <Sun className="h-4 w-4 text-yellow-500" />;
+      return <Sun size={14} className="text-yellow-500" />;
     case "Nuageux":
-      return <Cloud className="h-4 w-4 text-gray-400" />;
+      return <Cloud size={14} className="text-slate-400" />;
     case "Pluvieux":
-      return <CloudRain className="h-4 w-4 text-blue-400" />;
+      return <CloudRain size={14} className="text-blue-400" />;
     case "Orageux":
-      return <Zap className="h-4 w-4 text-purple-500" />;
+      return <CloudLightning size={14} className="text-purple-500" />;
   }
 }
 
-function getMeteoEmoji(meteo: Meteo) {
-  switch (meteo) {
-    case "Ensoleillé": return "☀️";
-    case "Nuageux": return "☁️";
-    case "Pluvieux": return "🌧️";
-    case "Orageux": return "⛈️";
-  }
+function todayIso(): string {
+  const d = new Date();
+  return d.toISOString().split("T")[0];
 }
 
-function totalEffectifs(effectifs: Effectif[]): number {
-  return effectifs.reduce((s, e) => s + e.count, 0);
-}
-
-// ─── Weekly Summary ───────────────────────────────────────────────────────────
-
-function WeeklySummary({ reports }: { reports: DailyReport[] }) {
-  // Group by ISO week
-  const weeks: Record<string, DailyReport[]> = {};
-  reports.forEach((r) => {
-    const d = parseDate(r.date);
-    // Monday of that week
-    const day = d.getDay(); // 0=Sun
-    const diff = (day === 0 ? -6 : 1 - day);
-    const mon = new Date(d);
-    mon.setDate(d.getDate() + diff);
-    const key = formatDate(mon);
-    if (!weeks[key]) weeks[key] = [];
-    weeks[key].push(r);
-  });
-
-  const sortedWeeks = Object.entries(weeks).sort(([a], [b]) =>
-    a < b ? 1 : -1
-  );
-
-  if (sortedWeeks.length === 0) {
-    return (
-      <div className="text-center py-12 text-gray-500">
-        Aucun rapport disponible pour la synthèse.
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {sortedWeeks.map(([monStr, weekReports]) => {
-        const mon = parseDate(monStr);
-        const sun = new Date(mon);
-        sun.setDate(mon.getDate() + 6);
-        const allEffectifs = weekReports.flatMap((r) => r.effectifs);
-        const companies = Array.from(
-          new Set(allEffectifs.map((e) => e.entreprise))
-        );
-        const totalWorkers = weekReports.reduce(
-          (s, r) => s + totalEffectifs(r.effectifs),
-          0
-        );
-        const allZones = Array.from(
-          new Set(weekReports.flatMap((r) => r.zones))
-        );
-        const hasIncidents = weekReports.some(
-          (r) => r.incidents && r.incidents.toLowerCase() !== "aucun incident."
-        );
-
-        return (
-          <Card key={monStr}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-blue-600" />
-                Semaine du{" "}
-                {mon.getDate()} au {sun.getDate()}{" "}
-                {MONTH_NAMES[sun.getMonth()]} {sun.getFullYear()}
-                <Badge variant="secondary" className="ml-auto">
-                  {weekReports.length} rapport{weekReports.length > 1 ? "s" : ""}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Stats row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-blue-50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-blue-700">
-                    {weekReports.length}
-                  </div>
-                  <div className="text-xs text-blue-600">Jours travaillés</div>
-                </div>
-                <div className="bg-green-50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-700">
-                    {totalWorkers}
-                  </div>
-                  <div className="text-xs text-green-600">Effectifs cumulés</div>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-purple-700">
-                    {companies.length}
-                  </div>
-                  <div className="text-xs text-purple-600">Entreprises</div>
-                </div>
-                <div className={`rounded-lg p-3 text-center ${hasIncidents ? "bg-red-50" : "bg-gray-50"}`}>
-                  <div className={`text-2xl font-bold ${hasIncidents ? "text-red-700" : "text-gray-500"}`}>
-                    {hasIncidents ? "⚠️" : "✓"}
-                  </div>
-                  <div className={`text-xs ${hasIncidents ? "text-red-600" : "text-gray-500"}`}>
-                    {hasIncidents ? "Incidents" : "Sans incident"}
-                  </div>
-                </div>
-              </div>
-
-              {/* Daily breakdown */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">
-                  Récapitulatif journalier
-                </h4>
-                <div className="space-y-2">
-                  {weekReports
-                    .sort((a, b) => (a.date < b.date ? 1 : -1))
-                    .map((r) => {
-                      const d = parseDate(r.date);
-                      return (
-                        <div
-                          key={r.date}
-                          className="flex items-start gap-3 p-2 bg-gray-50 rounded-lg text-sm"
-                        >
-                          <div className="flex items-center gap-1 min-w-[90px]">
-                            {getMeteoIcon(r.meteo)}
-                            <span className="font-medium text-gray-700">
-                              {DAY_NAMES[(d.getDay() + 6) % 7]}{" "}
-                              {String(d.getDate()).padStart(2, "0")}/{String(d.getMonth() + 1).padStart(2, "0")}
-                            </span>
-                          </div>
-                          <div className="flex-1 text-gray-600 line-clamp-2">
-                            {r.travaux}
-                          </div>
-                          <Badge variant="outline" className="shrink-0 text-xs">
-                            {totalEffectifs(r.effectifs)} pers.
-                          </Badge>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-
-              {/* Zones */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">
-                  Zones travaillées
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {allZones.map((z) => (
-                    <Badge key={z} className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                      {z}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Report Detail Panel ──────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ReportDetail({ report }: { report: DailyReport }) {
-  const d = parseDate(report.date);
-  const dayName = DAY_NAMES[(d.getDay() + 6) % 7];
-  const displayDate = `${dayName} ${String(d.getDate()).padStart(2, "0")} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
-
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
-        <div className="p-2 bg-white rounded-lg shadow-sm">
-          {getMeteoIcon(report.meteo)}
-        </div>
-        <div>
-          <div className="font-semibold text-gray-800">{displayDate}</div>
-          <div className="text-sm text-gray-500 flex items-center gap-2">
-            <span>
-              {getMeteoEmoji(report.meteo)} {report.meteo}
-            </span>
-            <span>·</span>
-            <span>🌡️ {report.temperature}°C</span>
-            <span>·</span>
-            <span>👷 {totalEffectifs(report.effectifs)} personnes</span>
+    <Card className="bg-white border border-slate-200 shadow-sm">
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <CardTitle className="text-base font-semibold text-slate-800">
+              Rapport du {report.date}
+            </CardTitle>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Rédigé par {report.redacteur}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{meteoEmoji(report.meteo)}</span>
+            <Badge variant="outline" className="flex items-center gap-1 text-sm">
+              {meteoIcon(report.meteo)}
+              {report.meteo}
+            </Badge>
+            <Badge variant="secondary" className="text-sm">
+              {report.temperature}°C
+            </Badge>
           </div>
         </div>
-      </div>
-
-      {/* Effectifs */}
-      <div>
-        <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-          <Users className="h-4 w-4 text-blue-500" />
-          Effectifs par entreprise
-        </h4>
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left px-3 py-2 font-medium text-gray-600">
-                  Entreprise
-                </th>
-                <th className="text-left px-3 py-2 font-medium text-gray-600">
-                  Rôle
-                </th>
-                <th className="text-right px-3 py-2 font-medium text-gray-600">
-                  Nb
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.effectifs.map((e, i) => (
-                <tr
-                  key={i}
-                  className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                >
-                  <td className="px-3 py-2 font-medium text-gray-800">
-                    {e.entreprise}
-                  </td>
-                  <td className="px-3 py-2 text-gray-600">{e.role}</td>
-                  <td className="px-3 py-2 text-right">
-                    <Badge variant="secondary">{e.count}</Badge>
-                  </td>
-                </tr>
-              ))}
-              <tr className="bg-blue-50 font-semibold">
-                <td className="px-3 py-2 text-blue-800" colSpan={2}>
-                  Total
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <Badge className="bg-blue-600 hover:bg-blue-600">
-                    {totalEffectifs(report.effectifs)}
-                  </Badge>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Zones */}
-      <div>
-        <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-          <CheckCircle className="h-4 w-4 text-green-500" />
-          Zones travaillées
-        </h4>
-        <div className="flex flex-wrap gap-2">
-          {report.zones.map((z) => (
-            <Badge key={z} className="bg-green-100 text-green-800 hover:bg-green-100">
-              {z}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      {/* Travaux */}
-      <div>
-        <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-          <FileText className="h-4 w-4 text-indigo-500" />
-          Travaux réalisés
-        </h4>
-        <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 leading-relaxed">
-          {report.travaux}
-        </p>
-      </div>
-
-      {/* Incidents */}
-      <div>
-        <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-          <AlertTriangle className="h-4 w-4 text-orange-500" />
-          Incidents
-        </h4>
-        <p className="text-sm text-gray-700 bg-orange-50 rounded-lg p-3 leading-relaxed">
-          {report.incidents}
-        </p>
-      </div>
-
-      {/* Visites */}
-      <div>
-        <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-          <Eye className="h-4 w-4 text-purple-500" />
-          Visites / Intervenants
-        </h4>
-        <p className="text-sm text-gray-700 bg-purple-50 rounded-lg p-3 leading-relaxed">
-          {report.visites}
-        </p>
-      </div>
-
-      {/* Instructions */}
-      <div>
-        <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-          <CheckCircle className="h-4 w-4 text-blue-500" />
-          Instructions données
-        </h4>
-        <p className="text-sm text-gray-700 bg-blue-50 rounded-lg p-3 leading-relaxed">
-          {report.instructions}
-        </p>
-      </div>
-
-      {/* Blocages */}
-      {report.blocages && (
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Effectifs */}
         <div>
-          <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-            Blocages
-          </h4>
-          <p className="text-sm text-gray-700 bg-red-50 rounded-lg p-3 leading-relaxed">
-            {report.blocages}
+          <div className="flex items-center gap-1.5 mb-2">
+            <Users size={14} className="text-blue-600" />
+            <span className="text-sm font-medium text-slate-700">Effectifs</span>
+          </div>
+          <div className="rounded-md border border-slate-200 overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50">
+                  <TableHead className="text-xs">Entreprise</TableHead>
+                  <TableHead className="text-xs text-right">Effectif</TableHead>
+                  <TableHead className="text-xs">Qualification</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {report.effectifs.map((e, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="text-sm font-medium">{e.entreprise}</TableCell>
+                    <TableCell className="text-sm text-right">{e.effectif}</TableCell>
+                    <TableCell className="text-sm text-slate-500">{e.qualification}</TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="bg-slate-50 font-semibold">
+                  <TableCell className="text-sm">Total</TableCell>
+                  <TableCell className="text-sm text-right">{report.totalEffectif}</TableCell>
+                  <TableCell />
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        {/* Travaux */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <ClipboardList size={14} className="text-blue-600" />
+            <span className="text-sm font-medium text-slate-700">Travaux réalisés</span>
+          </div>
+          <p className="text-sm text-slate-600 bg-slate-50 rounded-md px-3 py-2 border border-slate-100">
+            {report.travauxRealises}
           </p>
         </div>
-      )}
-    </div>
+
+        {/* Zones */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-2">
+            <MapPin size={14} className="text-blue-600" />
+            <span className="text-sm font-medium text-slate-700">Zones travaillées</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {report.zones.map((z) => (
+              <Badge key={z} variant="info" className="text-xs">
+                {z}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {/* Incidents */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <AlertTriangle size={14} className="text-orange-500" />
+            <span className="text-sm font-medium text-slate-700">Incidents</span>
+            {report.incidents ? (
+              <Badge variant="warning" className="text-xs">Signalé</Badge>
+            ) : (
+              <Badge variant="success" className="text-xs">Aucun</Badge>
+            )}
+          </div>
+          {report.incidents && (
+            <p className="text-sm text-slate-600 bg-orange-50 rounded-md px-3 py-2 border border-orange-100">
+              {report.incidents}
+            </p>
+          )}
+        </div>
+
+        {/* Visites */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <Eye size={14} className="text-blue-600" />
+            <span className="text-sm font-medium text-slate-700">Visites / Intervenants</span>
+          </div>
+          <p className="text-sm text-slate-600 bg-slate-50 rounded-md px-3 py-2 border border-slate-100">
+            {report.visites || "—"}
+          </p>
+        </div>
+
+        {/* Instructions */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <FileText size={14} className="text-blue-600" />
+            <span className="text-sm font-medium text-slate-700">Instructions données</span>
+          </div>
+          <p className="text-sm text-slate-600 bg-slate-50 rounded-md px-3 py-2 border border-slate-100">
+            {report.instructions || "—"}
+          </p>
+        </div>
+
+        {/* Blocages */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <AlertTriangle size={14} className="text-red-500" />
+            <span className="text-sm font-medium text-slate-700">Blocages</span>
+            {report.blocages ? (
+              <Badge variant="destructive" className="text-xs">Actif</Badge>
+            ) : (
+              <Badge variant="success" className="text-xs">Aucun</Badge>
+            )}
+          </div>
+          {report.blocages && (
+            <p className="text-sm text-slate-600 bg-red-50 rounded-md px-3 py-2 border border-red-100">
+              {report.blocages}
+            </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-// ─── New Report Form ──────────────────────────────────────────────────────────
+// ─── Report Form Modal ────────────────────────────────────────────────────────
 
-interface NewReportFormProps {
-  onSave: (report: DailyReport) => void;
-  onClose: () => void;
+function emptyForm(): ReportForm {
+  return {
+    date: todayIso(),
+    meteo: "",
+    temperature: "",
+    effectifs: [{ entreprise: "", effectif: "", qualification: "" }],
+    travauxRealises: "",
+    zones: [],
+    incidents: "",
+    visites: "",
+    instructions: "",
+    blocages: "",
+  };
 }
 
-function NewReportForm({ onSave, onClose }: NewReportFormProps) {
-  const today = formatDate(new Date());
-  const [date, setDate] = useState(today);
-  const [meteo, setMeteo] = useState<Meteo>("Ensoleillé");
-  const [temperature, setTemperature] = useState("");
-  const [effectifsText, setEffectifsText] = useState("");
-  const [travaux, setTravaux] = useState("");
-  const [zones, setZones] = useState<string[]>([]);
-  const [incidents, setIncidents] = useState("");
-  const [visites, setVisites] = useState("");
-  const [instructions, setInstructions] = useState("");
-  const [blocages, setBlocages] = useState("");
+interface ReportFormModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (report: DailyReport) => void;
+}
 
-  function toggleZone(zone: string) {
-    setZones((prev) =>
-      prev.includes(zone) ? prev.filter((z) => z !== zone) : [...prev, zone]
-    );
+function ReportFormModal({ open, onClose, onSubmit }: ReportFormModalProps) {
+  const [form, setForm] = useState<ReportForm>(emptyForm);
+
+  function handleClose() {
+    setForm(emptyForm());
+    onClose();
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    // Parse effectifs from textarea (one per line: "Entreprise, Rôle, N")
-    const parsedEffectifs: Effectif[] = effectifsText
-      .split("\n")
-      .filter((l) => l.trim())
-      .map((line) => {
-        const parts = line.split(",").map((p) => p.trim());
-        return {
-          entreprise: parts[0] || "",
-          role: parts[1] || "",
-          count: parseInt(parts[2] || "0", 10) || 0,
-        };
-      })
-      .filter((e) => e.entreprise);
+  function setField<K extends keyof ReportForm>(key: K, val: ReportForm[K]) {
+    setForm((prev) => ({ ...prev, [key]: val }));
+  }
 
-    onSave({
-      date,
-      meteo,
-      temperature: parseFloat(temperature) || 0,
-      effectifs: parsedEffectifs,
-      travaux,
-      zones,
-      incidents: incidents || "Aucun incident.",
-      visites,
-      instructions,
-      blocages,
+  function updateEffectif(idx: number, field: keyof FormEffectif, val: string) {
+    setForm((prev) => {
+      const eff = [...prev.effectifs];
+      eff[idx] = { ...eff[idx], [field]: val };
+      return { ...prev, effectifs: eff };
     });
   }
 
+  function addEffectif() {
+    setForm((prev) => ({
+      ...prev,
+      effectifs: [
+        ...prev.effectifs,
+        { entreprise: "", effectif: "", qualification: "" },
+      ],
+    }));
+  }
+
+  function removeEffectif(idx: number) {
+    setForm((prev) => ({
+      ...prev,
+      effectifs: prev.effectifs.filter((_, i) => i !== idx),
+    }));
+  }
+
+  function toggleZone(zone: string) {
+    setForm((prev) => {
+      const zones = prev.zones.includes(zone)
+        ? prev.zones.filter((z) => z !== zone)
+        : [...prev.zones, zone];
+      return { ...prev, zones };
+    });
+  }
+
+  function handleSubmit() {
+    if (!form.date || !form.meteo) return;
+
+    const [y, m, d] = form.date.split("-");
+    const dateDisplay = `${d}/${m}/${y}`;
+
+    const effectifs: Effectif[] = form.effectifs
+      .filter((e) => e.entreprise.trim())
+      .map((e) => ({
+        entreprise: e.entreprise,
+        effectif: parseInt(e.effectif) || 0,
+        qualification: e.qualification,
+      }));
+
+    const totalEffectif = effectifs.reduce((s, e) => s + e.effectif, 0);
+
+    const report: DailyReport = {
+      dateKey: form.date,
+      date: dateDisplay,
+      meteo: form.meteo as Meteo,
+      temperature: parseFloat(form.temperature) || 0,
+      effectifs,
+      totalEffectif,
+      zones: form.zones,
+      travauxRealises: form.travauxRealises,
+      incidents: form.incidents,
+      visites: form.visites,
+      instructions: form.instructions,
+      blocages: form.blocages,
+      redacteur: "M. Farid",
+    };
+
+    onSubmit(report);
+    setForm(emptyForm());
+  }
+
+  const inputCls =
+    "w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Date */}
-        <div className="space-y-1">
-          <Label htmlFor="date" className="text-sm font-medium">
-            Date
-          </Label>
-          <Input
-            id="date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-          />
-        </div>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarDays size={18} className="text-blue-600" />
+            Saisir le rapport du jour
+          </DialogTitle>
+        </DialogHeader>
 
-        {/* Météo */}
-        <div className="space-y-1">
-          <Label className="text-sm font-medium">Météo</Label>
-          <Select
-            value={meteo}
-            onValueChange={(v) => setMeteo(v as Meteo)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Ensoleillé">☀️ Ensoleillé</SelectItem>
-              <SelectItem value="Nuageux">☁️ Nuageux</SelectItem>
-              <SelectItem value="Pluvieux">🌧️ Pluvieux</SelectItem>
-              <SelectItem value="Orageux">⛈️ Orageux</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <div className="space-y-5 py-2">
+          {/* Date */}
+          <div>
+            <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Date du rapport
+            </Label>
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => setField("date", e.target.value)}
+              className={inputCls}
+            />
+          </div>
 
-        {/* Température */}
-        <div className="space-y-1">
-          <Label htmlFor="temp" className="text-sm font-medium">
-            Température (°C)
-          </Label>
-          <Input
-            id="temp"
-            type="number"
-            placeholder="ex: 28"
-            value={temperature}
-            onChange={(e) => setTemperature(e.target.value)}
-          />
-        </div>
-      </div>
+          {/* Météo */}
+          <div>
+            <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Météo
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {METEO_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setField("meteo", opt.value)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm transition-colors ${
+                    form.meteo === opt.value
+                      ? "bg-blue-100 border-blue-400 text-blue-700"
+                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>{opt.emoji}</span>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* Effectifs */}
-      <div className="space-y-1">
-        <Label htmlFor="effectifs" className="text-sm font-medium">
-          Effectifs par entreprise{" "}
-          <span className="text-gray-400 font-normal">
-            (format: Entreprise, Rôle, Nombre — une ligne par entrée)
-          </span>
-        </Label>
-        <Textarea
-          id="effectifs"
-          placeholder={"SETAB, Ouvriers maçonnerie, 15\nElecPro, Électriciens, 8"}
-          value={effectifsText}
-          onChange={(e) => setEffectifsText(e.target.value)}
-          rows={3}
-        />
-      </div>
-
-      {/* Travaux */}
-      <div className="space-y-1">
-        <Label htmlFor="travaux" className="text-sm font-medium">
-          Travaux réalisés
-        </Label>
-        <Textarea
-          id="travaux"
-          placeholder="Décrire les travaux effectués aujourd'hui..."
-          value={travaux}
-          onChange={(e) => setTravaux(e.target.value)}
-          rows={3}
-          required
-        />
-      </div>
-
-      {/* Zones */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Zones travaillées</Label>
-        <div className="flex flex-wrap gap-3">
-          {ALL_ZONES.map((zone) => (
-            <label
-              key={zone}
-              className="flex items-center gap-2 cursor-pointer select-none"
-            >
+          {/* Température */}
+          <div>
+            <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Température
+            </Label>
+            <div className="flex items-center gap-2">
               <input
-                type="checkbox"
-                checked={zones.includes(zone)}
-                onChange={() => toggleZone(zone)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                type="number"
+                value={form.temperature}
+                onChange={(e) => setField("temperature", e.target.value)}
+                placeholder="30"
+                className={`${inputCls} w-28`}
               />
-              <span className="text-sm text-gray-700">{zone}</span>
-            </label>
-          ))}
+              <span className="text-sm text-slate-500">°C</span>
+            </div>
+          </div>
+
+          {/* Effectifs */}
+          <div>
+            <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Effectifs
+            </Label>
+            <div className="rounded-md border border-slate-200 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead className="text-xs">Entreprise</TableHead>
+                    <TableHead className="text-xs">Effectif</TableHead>
+                    <TableHead className="text-xs">Qualification</TableHead>
+                    <TableHead className="text-xs w-10">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {form.effectifs.map((eff, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="p-1">
+                        <input
+                          type="text"
+                          value={eff.entreprise}
+                          onChange={(e) =>
+                            updateEffectif(idx, "entreprise", e.target.value)
+                          }
+                          placeholder="SETAB"
+                          className={inputCls}
+                        />
+                      </TableCell>
+                      <TableCell className="p-1">
+                        <input
+                          type="number"
+                          value={eff.effectif}
+                          onChange={(e) =>
+                            updateEffectif(idx, "effectif", e.target.value)
+                          }
+                          placeholder="0"
+                          className={`${inputCls} w-20`}
+                        />
+                      </TableCell>
+                      <TableCell className="p-1">
+                        <input
+                          type="text"
+                          value={eff.qualification}
+                          onChange={(e) =>
+                            updateEffectif(idx, "qualification", e.target.value)
+                          }
+                          placeholder="Ouvriers GC"
+                          className={inputCls}
+                        />
+                      </TableCell>
+                      <TableCell className="p-1">
+                        <button
+                          type="button"
+                          onClick={() => removeEffectif(idx)}
+                          className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="p-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={addEffectif}
+                  className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  <Plus size={14} />
+                  Ajouter une entreprise
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Travaux réalisés */}
+          <div>
+            <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Travaux réalisés
+            </Label>
+            <Textarea
+              rows={3}
+              value={form.travauxRealises}
+              onChange={(e) => setField("travauxRealises", e.target.value)}
+              placeholder="Décrire les travaux effectués..."
+              className="text-sm resize-none"
+            />
+          </div>
+
+          {/* Zones */}
+          <div>
+            <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Zones travaillées
+            </Label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {ALL_ZONES.map((zone) => (
+                <div key={zone} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`zone-${zone}`}
+                    checked={form.zones.includes(zone)}
+                    onCheckedChange={() => toggleZone(zone)}
+                  />
+                  <label
+                    htmlFor={`zone-${zone}`}
+                    className="text-sm text-slate-700 cursor-pointer"
+                  >
+                    {zone}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Incidents */}
+          <div>
+            <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Incidents
+            </Label>
+            <Textarea
+              rows={2}
+              value={form.incidents}
+              onChange={(e) => setField("incidents", e.target.value)}
+              placeholder="Aucun incident si vide"
+              className="text-sm resize-none"
+            />
+          </div>
+
+          {/* Visites */}
+          <div>
+            <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Visites / Intervenants
+            </Label>
+            <Textarea
+              rows={2}
+              value={form.visites}
+              onChange={(e) => setField("visites", e.target.value)}
+              placeholder="Visites et intervenants du jour..."
+              className="text-sm resize-none"
+            />
+          </div>
+
+          {/* Instructions */}
+          <div>
+            <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Instructions données
+            </Label>
+            <Textarea
+              rows={2}
+              value={form.instructions}
+              onChange={(e) => setField("instructions", e.target.value)}
+              placeholder="Instructions et directives..."
+              className="text-sm resize-none"
+            />
+          </div>
+
+          {/* Blocages */}
+          <div>
+            <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Blocages
+            </Label>
+            <Textarea
+              rows={2}
+              value={form.blocages}
+              onChange={(e) => setField("blocages", e.target.value)}
+              placeholder="Blocages et points d'attention..."
+              className="text-sm resize-none"
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Incidents */}
-      <div className="space-y-1">
-        <Label htmlFor="incidents" className="text-sm font-medium">
-          Incidents
-        </Label>
-        <Textarea
-          id="incidents"
-          placeholder="Décrire tout incident ou écrire « Aucun incident. »"
-          value={incidents}
-          onChange={(e) => setIncidents(e.target.value)}
-          rows={2}
-        />
-      </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={handleClose}>
+            Annuler
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={!form.date || !form.meteo}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Enregistrer le rapport
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-      {/* Visites */}
-      <div className="space-y-1">
-        <Label htmlFor="visites" className="text-sm font-medium">
-          Visites / Intervenants
-        </Label>
-        <Textarea
-          id="visites"
-          placeholder="Visites, réunions, intervenants extérieurs..."
-          value={visites}
-          onChange={(e) => setVisites(e.target.value)}
-          rows={2}
-        />
-      </div>
+// ─── Calendar ─────────────────────────────────────────────────────────────────
 
-      {/* Instructions */}
-      <div className="space-y-1">
-        <Label htmlFor="instructions" className="text-sm font-medium">
-          Instructions données
-        </Label>
-        <Textarea
-          id="instructions"
-          placeholder="Instructions transmises aux équipes..."
-          value={instructions}
-          onChange={(e) => setInstructions(e.target.value)}
-          rows={2}
-        />
-      </div>
+const DAY_HEADERS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
-      {/* Blocages */}
-      <div className="space-y-1">
-        <Label htmlFor="blocages" className="text-sm font-medium">
-          Blocages
-        </Label>
-        <Textarea
-          id="blocages"
-          placeholder="Blocages, retards, points bloquants..."
-          value={blocages}
-          onChange={(e) => setBlocages(e.target.value)}
-          rows={2}
-        />
-      </div>
+interface CalendarProps {
+  reports: DailyReport[];
+  selectedDateKey: string;
+  onSelectDate: (key: string) => void;
+}
 
-      {/* Actions */}
-      <div className="flex justify-end gap-3 pt-2 border-t">
-        <Button type="button" variant="outline" onClick={onClose}>
-          Annuler
-        </Button>
-        <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-          Enregistrer le rapport
-        </Button>
-      </div>
-    </form>
+function JuneCalendar({ reports, selectedDateKey, onSelectDate }: CalendarProps) {
+  // June 2026: 1st is Monday (index 0 in Mon-first week)
+  const daysInJune = 30;
+  const firstDayOffset = 0; // Monday = 0
+
+  const reportKeys = new Set(reports.map((r) => r.dateKey));
+
+  // Build 5 rows x 7 cols grid
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDayOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInJune; d++) cells.push(d);
+  while (cells.length < 35) cells.push(null);
+
+  function dateKey(day: number): string {
+    const dd = String(day).padStart(2, "0");
+    return `2026-06-${dd}`;
+  }
+
+  return (
+    <Card className="bg-white border border-slate-200 shadow-sm">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+          <CalendarDays size={16} className="text-blue-600" />
+          Juin 2026
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-7 gap-1">
+          {DAY_HEADERS.map((h) => (
+            <div
+              key={h}
+              className="text-center text-xs font-medium text-slate-500 py-1"
+            >
+              {h}
+            </div>
+          ))}
+          {cells.map((day, idx) => {
+            if (day === null) {
+              return (
+                <div key={`empty-${idx}`} className="h-9 rounded-md" />
+              );
+            }
+            const key = dateKey(day);
+            const hasReport = reportKeys.has(key);
+            const isSelected = selectedDateKey === key;
+
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onSelectDate(key)}
+                className={`relative h-9 rounded-md text-sm font-medium transition-colors flex flex-col items-center justify-center ${
+                  isSelected
+                    ? "bg-blue-50 border border-blue-300 text-blue-700"
+                    : "border border-transparent hover:bg-slate-50 text-slate-700"
+                }`}
+              >
+                <span>{day}</span>
+                {hasReport && (
+                  <CheckCircle2
+                    size={8}
+                    className="text-green-500 absolute bottom-1"
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
+          <CheckCircle2 size={10} className="text-green-500" />
+          Rapport disponible
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Synthèse hebdomadaire ────────────────────────────────────────────────────
+
+function SyntheseCard({ reports }: { reports: DailyReport[] }) {
+  // Stats for week June 8–14
+  const weekReports = reports.filter(
+    (r) => r.dateKey >= "2026-06-08" && r.dateKey <= "2026-06-14"
+  );
+
+  const totalPersonnesJours = weekReports.reduce(
+    (s, r) => s + r.totalEffectif,
+    0
+  );
+  const joursTravailes = weekReports.length;
+
+  const meteoCounts: Record<string, number> = {};
+  weekReports.forEach((r) => {
+    meteoCounts[r.meteo] = (meteoCounts[r.meteo] || 0) + 1;
+  });
+
+  const nbIncidents = weekReports.filter((r) => r.incidents.trim()).length;
+
+  const zonesSet = new Set<string>();
+  weekReports.forEach((r) => r.zones.forEach((z) => zonesSet.add(z)));
+  const zones = Array.from(zonesSet);
+
+  return (
+    <Card className="bg-white border border-slate-200 shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+          <ThumbsUp size={16} className="text-blue-600" />
+          Synthèse — Semaine du 8 au 14 juin 2026
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Total effectif jours */}
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Users size={14} className="text-blue-600" />
+              <span className="text-xs font-medium text-blue-700">
+                Total effectif jours
+              </span>
+            </div>
+            <p className="text-2xl font-bold text-blue-800">
+              {totalPersonnesJours}
+            </p>
+            <p className="text-xs text-blue-600">
+              personnes-jours ({joursTravailes} jours travaillés)
+            </p>
+          </div>
+
+          {/* Météo dominante */}
+          <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-100">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Sun size={14} className="text-yellow-600" />
+              <span className="text-xs font-medium text-yellow-700">
+                Météo dominante
+              </span>
+            </div>
+            <div className="space-y-0.5 mt-1">
+              {Object.entries(meteoCounts).map(([meteo, count]) => (
+                <p key={meteo} className="text-sm text-yellow-800">
+                  {count}× {meteo}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          {/* Incidents */}
+          <div
+            className={`rounded-lg p-3 border ${
+              nbIncidents > 0
+                ? "bg-orange-50 border-orange-100"
+                : "bg-green-50 border-green-100"
+            }`}
+          >
+            <div className="flex items-center gap-1.5 mb-1">
+              <AlertTriangle
+                size={14}
+                className={nbIncidents > 0 ? "text-orange-500" : "text-green-600"}
+              />
+              <span
+                className={`text-xs font-medium ${
+                  nbIncidents > 0 ? "text-orange-700" : "text-green-700"
+                }`}
+              >
+                Incidents
+              </span>
+            </div>
+            <p
+              className={`text-2xl font-bold ${
+                nbIncidents > 0 ? "text-orange-800" : "text-green-800"
+              }`}
+            >
+              {nbIncidents}
+            </p>
+            <p
+              className={`text-xs ${
+                nbIncidents > 0 ? "text-orange-600" : "text-green-600"
+              }`}
+            >
+              {nbIncidents === 0 ? "Aucun incident" : "incident(s) signalé(s)"}
+            </p>
+          </div>
+
+          {/* Zones actives */}
+          <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+            <div className="flex items-center gap-1.5 mb-2">
+              <MapPin size={14} className="text-slate-600" />
+              <span className="text-xs font-medium text-slate-700">
+                Zones actives
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {zones.map((z) => (
+                <Badge key={z} variant="secondary" className="text-xs">
+                  {z}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -710,344 +931,82 @@ function NewReportForm({ onSave, onClose }: NewReportFormProps) {
 
 export default function JournalPage() {
   const [reports, setReports] = useState<DailyReport[]>(INITIAL_REPORTS);
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonth, setCurrentMonth] = useState(5); // 0-indexed → June
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [isNewReportOpen, setIsNewReportOpen] = useState(false);
-  const [isSynthesisOpen, setIsSynthesisOpen] = useState(false);
+  const [selectedDateKey, setSelectedDateKey] = useState<string>("2026-06-10");
+  const [modalOpen, setModalOpen] = useState(false);
 
-  // Build a set for O(1) lookup
-  const reportDates = new Set(reports.map((r) => r.date));
+  const selectedReport = reports.find((r) => r.dateKey === selectedDateKey) ?? null;
 
-  const selectedReport = selectedDate
-    ? reports.find((r) => r.date === selectedDate) ?? null
-    : null;
-
-  // ── Calendar helpers ──
-
-  function prevMonth() {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear((y) => y - 1);
-    } else {
-      setCurrentMonth((m) => m - 1);
-    }
-  }
-
-  function nextMonth() {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear((y) => y + 1);
-    } else {
-      setCurrentMonth((m) => m + 1);
-    }
-  }
-
-  // First day of month (0=Sun, adjusted for Mon-first)
-  const firstDayDate = new Date(currentYear, currentMonth, 1);
-  const firstWeekday = (firstDayDate.getDay() + 6) % 7; // 0=Mon
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-  // Total cells (always fill to complete weeks)
-  const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
-
-  function handleDayClick(day: number) {
-    const d = new Date(currentYear, currentMonth, day);
-    const str = formatDate(d);
-    setSelectedDate((prev) => (prev === str ? null : str));
-  }
-
-  function handleSaveReport(report: DailyReport) {
+  function handleAddReport(report: DailyReport) {
     setReports((prev) => {
-      const idx = prev.findIndex((r) => r.date === report.date);
-      if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = report;
-        return updated;
-      }
-      return [...prev, report];
+      const filtered = prev.filter((r) => r.dateKey !== report.dateKey);
+      return [...filtered, report].sort((a, b) =>
+        b.dateKey.localeCompare(a.dateKey)
+      );
     });
-    setIsNewReportOpen(false);
+    setSelectedDateKey(report.dateKey);
+    setModalOpen(false);
   }
-
-  const today = formatDate(new Date());
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div className="p-4 lg:p-6 space-y-5">
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Calendar className="h-6 w-6 text-blue-600" />
+          <h1 className="text-xl font-bold text-slate-900">
             Journal de Chantier
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Polyclinique — suivi quotidien des activités
+          <p className="text-sm text-slate-500 mt-0.5">
+            Suivi quotidien des activités de construction
           </p>
         </div>
-
-        <div className="flex flex-wrap gap-2">
-          {/* Weekly synthesis */}
-          <Dialog open={isSynthesisOpen} onOpenChange={setIsSynthesisOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Synthèse hebdomadaire
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  Synthèse hebdomadaire
-                </DialogTitle>
-              </DialogHeader>
-              <WeeklySummary reports={reports} />
-            </DialogContent>
-          </Dialog>
-
-          {/* New report */}
-          <Dialog open={isNewReportOpen} onOpenChange={setIsNewReportOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Saisir rapport du jour
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Plus className="h-5 w-5 text-blue-600" />
-                  Nouveau rapport journalier
-                </DialogTitle>
-              </DialogHeader>
-              <NewReportForm
-                onSave={handleSaveReport}
-                onClose={() => setIsNewReportOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus size={16} />
+          Saisir rapport du jour
+        </button>
       </div>
 
-      {/* ── Main Layout ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ── Calendar ── */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader className="pb-2">
-              {/* Month navigation */}
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={prevMonth}
-                  className="h-8 w-8"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <h2 className="text-lg font-semibold text-gray-800">
-                  {MONTH_NAMES[currentMonth]} {currentYear}
-                </h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={nextMonth}
-                  className="h-8 w-8"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+      {/* Calendar */}
+      <JuneCalendar
+        reports={reports}
+        selectedDateKey={selectedDateKey}
+        onSelectDate={setSelectedDateKey}
+      />
 
-              {/* Legend */}
-              <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  <span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
-                  Rapport saisi
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="inline-block h-2 w-2 rounded-full bg-orange-400" />
-                  Aujourd&apos;hui
-                </span>
-              </div>
-            </CardHeader>
+      {/* Report detail */}
+      {selectedReport ? (
+        <ReportDetail report={selectedReport} />
+      ) : (
+        <Card className="bg-white border border-slate-200 shadow-sm">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <CalendarDays size={36} className="text-slate-300 mb-3" />
+            <p className="text-sm text-slate-500">
+              Aucun rapport pour ce jour
+            </p>
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="mt-3 flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              <Plus size={14} />
+              Créer un rapport
+            </button>
+          </CardContent>
+        </Card>
+      )}
 
-            <CardContent>
-              {/* Day names header */}
-              <div className="grid grid-cols-7 mb-1">
-                {DAY_NAMES.map((d) => (
-                  <div
-                    key={d}
-                    className="text-center text-xs font-medium text-gray-500 py-2"
-                  >
-                    {d}
-                  </div>
-                ))}
-              </div>
+      {/* Synthèse hebdomadaire */}
+      <SyntheseCard reports={reports} />
 
-              {/* Day cells */}
-              <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: totalCells }).map((_, idx) => {
-                  const dayNum = idx - firstWeekday + 1;
-                  if (dayNum < 1 || dayNum > daysInMonth) {
-                    return <div key={idx} className="h-12" />;
-                  }
-
-                  const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
-                  const hasReport = reportDates.has(dateStr);
-                  const isToday = dateStr === today;
-                  const isSelected = dateStr === selectedDate;
-
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleDayClick(dayNum)}
-                      className={[
-                        "h-12 rounded-lg flex flex-col items-center justify-center gap-0.5 text-sm font-medium transition-all",
-                        isSelected
-                          ? "bg-blue-600 text-white shadow-md"
-                          : isToday
-                          ? "bg-orange-100 text-orange-700 border border-orange-300"
-                          : hasReport
-                          ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
-                          : "text-gray-700 hover:bg-gray-100",
-                      ].join(" ")}
-                    >
-                      <span>{dayNum}</span>
-                      {hasReport && (
-                        <span
-                          className={[
-                            "h-1.5 w-1.5 rounded-full",
-                            isSelected ? "bg-white" : "bg-blue-500",
-                          ].join(" ")}
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Summary footer */}
-              <div className="mt-4 pt-4 border-t flex items-center justify-between text-sm text-gray-500">
-                <span>
-                  {
-                    reports.filter((r) => {
-                      const d = parseDate(r.date);
-                      return (
-                        d.getFullYear() === currentYear &&
-                        d.getMonth() === currentMonth
-                      );
-                    }).length
-                  }{" "}
-                  rapport(s) ce mois
-                </span>
-                <span>
-                  {reports.length} rapport(s) au total
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* ── Side Panel ── */}
-        <div className="lg:col-span-1">
-          {selectedReport ? (
-            <Card className="sticky top-6">
-              <CardHeader className="pb-2 border-b">
-                <CardTitle className="text-base font-semibold text-gray-800 flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-blue-600" />
-                    Rapport du jour
-                  </span>
-                  <button
-                    onClick={() => setSelectedDate(null)}
-                    className="text-gray-400 hover:text-gray-600 text-lg leading-none"
-                    aria-label="Fermer"
-                  >
-                    ×
-                  </button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 max-h-[calc(100vh-220px)] overflow-y-auto">
-                <ReportDetail report={selectedReport} />
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-16 text-center text-gray-400">
-                <Calendar className="h-10 w-10 mb-3 opacity-40" />
-                <p className="font-medium text-sm">
-                  Sélectionnez un jour
-                </p>
-                <p className="text-xs mt-1">
-                  Les jours avec un point bleu ont un rapport saisi.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-
-      {/* ── Recent Reports List ── */}
-      <div className="mt-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-          <FileText className="h-4 w-4 text-gray-400" />
-          Derniers rapports
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[...reports]
-            .sort((a, b) => (a.date < b.date ? 1 : -1))
-            .slice(0, 3)
-            .map((r) => {
-              const d = parseDate(r.date);
-              const displayDate = `${String(d.getDate()).padStart(2, "0")} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
-              return (
-                <button
-                  key={r.date}
-                  onClick={() => setSelectedDate(r.date)}
-                  className={[
-                    "text-left p-4 rounded-xl border transition-all hover:shadow-md",
-                    selectedDate === r.date
-                      ? "border-blue-400 bg-blue-50 shadow-sm"
-                      : "border-gray-200 bg-white hover:border-blue-200",
-                  ].join(" ")}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-gray-800">
-                      {displayDate}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      {getMeteoIcon(r.meteo)}
-                      <span className="text-xs text-gray-500">
-                        {r.temperature}°C
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-600 line-clamp-2 mb-3">
-                    {r.travaux}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-wrap gap-1">
-                      {r.zones.map((z) => (
-                        <Badge
-                          key={z}
-                          variant="secondary"
-                          className="text-xs py-0"
-                        >
-                          {z}
-                        </Badge>
-                      ))}
-                    </div>
-                    <span className="text-xs text-gray-400 flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {totalEffectifs(r.effectifs)}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-        </div>
-      </div>
+      {/* Form modal */}
+      <ReportFormModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleAddReport}
+      />
     </div>
   );
 }

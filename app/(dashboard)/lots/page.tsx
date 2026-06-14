@@ -10,65 +10,65 @@ import { ChevronDown, ChevronRight, Briefcase, TrendingUp, Activity } from 'luci
 
 const LOTS = [
   {
-    id: 'lt1', code: 'CE-01', nom: 'Gros et second œuvre', type_lot: 'GC',
+    id: 'lt1', code: 'CE-01', nom: 'Gros et second œuvre',           type_lot: 'GO',
     montant_marche: 359251239, avancement: 45, statut: 'En cours',
     entreprise: 'DJI FU SARL', date_debut: '2024-10-27', date_fin_prevue: '2026-12-31',
   },
   {
-    id: 'lt2', code: 'CE-02', nom: 'Électricité — courant faible — sécurité incendie', type_lot: 'ÉLEC',
+    id: 'lt2', code: 'CE-02', nom: 'Électricité / CFA / SI',         type_lot: 'ELEC',
     montant_marche: 82511410, avancement: 20, statut: 'En cours',
     entreprise: 'DJI FU SARL', date_debut: '2024-10-27', date_fin_prevue: '2026-12-31',
   },
   {
-    id: 'lt3', code: 'CE-03', nom: 'Fluides — climatisations', type_lot: 'FLUIDES',
+    id: 'lt3', code: 'CE-03', nom: 'Fluides / Climatisations',       type_lot: 'FLUIDES',
     montant_marche: 115553060, avancement: 15, statut: 'En cours',
     entreprise: 'DJI FU SARL', date_debut: '2024-10-27', date_fin_prevue: '2026-12-31',
   },
   {
-    id: 'lt4', code: 'CE-04', nom: 'Divers', type_lot: 'DIVERS',
+    id: 'lt4', code: 'CE-04', nom: 'Divers',                         type_lot: 'DIVERS',
     montant_marche: 87486288, avancement: 10, statut: 'En cours',
     entreprise: 'DJI FU SARL', date_debut: '2024-10-27', date_fin_prevue: '2026-12-31',
   },
 ]
 
 const LOT_LOCAUX: Record<string, string[]> = {
-  lt1: ['Box Urgences 1-4', 'Déchocage', 'Petit Chir URG', 'Salle Radiologie', 'Bureau CS 1-4', 'Cabinet Dentaire', 'Bloc Césarienne', 'Chambres Maternité 1-14', 'Chambre Med 1-7'],
-  lt2: ['Box Urgences 1-4 (moniteurs/prises)', 'Salle Radiologie (tableau élec)', 'Bureau CS 1-4', 'Infirmerie URG', 'Bloc Césarienne', 'Salle Réveil'],
-  lt3: ['Box Urgences 1-4 (O₂/vide/air)', 'Déchocage', 'Bloc Césarienne', 'Salle Travail', 'Salle Réveil', 'Climatisation tous locaux'],
-  lt4: ['Façades — grille alu 2383ml', 'Auvent 82m²', 'Clôture périmétrique 440ml', 'Portails motorisés ×2'],
+  lt1: ['Box URG 1', 'Box URG 2', 'Déchocage', 'Bloc Césarienne', 'Salle Réveil', 'Salle Travail', 'Pré-travail', 'Chambres Maternité 1–14'],
+  lt2: ['Bureau CS 1', 'Bureau CS 2', 'Bureau CS 3', 'Bureau CS 4', 'Dentaire', 'GYN 1', 'GYN 2', 'Hospit de Jour'],
+  lt3: ['Box URG 1', 'Box URG 2', 'Box URG 3', 'Box URG 4', 'Déchocage', 'Petit Chir', 'Salle Réveil', 'Salle Travail'],
+  lt4: ['Salle de radiologie', 'Bureau CS 1', 'Chambre Med 1', 'Chambre Med 2', 'Chambre Med 3', 'Infirmerie URG'],
 }
 
 const LOT_CHECKLIST: Record<string, { label: string; done: boolean }[]> = {
   lt1: [
-    { label: 'Étude d\'exécution validée',    done: true  },
-    { label: 'Structure béton armé (80%)',     done: false },
-    { label: 'Second œuvre et finitions',      done: false },
+    { label: "Plans béton armé approuvés",         done: true  },
+    { label: "Structure béton terminée (45%)",      done: false },
+    { label: "Enduits et finitions second œuvre",  done: false },
   ],
   lt2: [
-    { label: 'Plan électricité approuvé',      done: true  },
-    { label: 'GE 200 kVA installé',            done: false },
-    { label: 'Essais et mise en service',      done: false },
+    { label: "Plans électricité CFO/CFA approuvés", done: true  },
+    { label: "Câblage TGBT et colonnes (20%)",       done: false },
+    { label: "Essais et mise en service élec.",      done: false },
   ],
   lt3: [
-    { label: 'Plan fluides validé',            done: true  },
-    { label: 'Réseau cuivre posé (20%)',       done: false },
-    { label: 'Essais pression gaz médicaux',   done: false },
+    { label: "Plans fluides médicaux approuvés",    done: true  },
+    { label: "Tuyauterie cuivre O2/Vide (15%)",     done: false },
+    { label: "Essais pression et PV signé",         done: false },
   ],
   lt4: [
-    { label: 'Plans façades approuvés',        done: true  },
-    { label: 'Grilles alu en cours',           done: false },
-    { label: 'Clôture et portails',            done: false },
+    { label: "Plans divers approuvés",              done: true  },
+    { label: "Signalétique et menuiseries (10%)",   done: false },
+    { label: "Réception et levée réserves",         done: false },
   ],
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  GC:      'bg-stone-100 text-stone-700',
-  ÉLEC:    'bg-yellow-100 text-yellow-700',
+  GO:      'bg-orange-100 text-orange-700',
+  ELEC:    'bg-yellow-100 text-yellow-700',
   FLUIDES: 'bg-cyan-100 text-cyan-700',
-  DIVERS:  'bg-purple-100 text-purple-700',
+  DIVERS:  'bg-slate-100 text-slate-700',
 }
 
-const RADIAL_COLORS = ['#78716c', '#eab308', '#06b6d4', '#a855f7']
+const RADIAL_COLORS = ['#f97316','#eab308','#06b6d4','#94a3b8']
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('fr-DJ', { maximumFractionDigits: 0 }).format(v) + ' FDJ'
@@ -97,8 +97,8 @@ export default function LotsPage() {
       {/* ── Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Lots Techniques</h1>
-          <p className="text-sm text-gray-500 mt-1">Polyclinique Cité Nassib · 6 lots techniques actifs</p>
+          <h1 className="text-2xl font-bold text-gray-900">Corps d&apos;état</h1>
+          <p className="text-sm text-gray-500 mt-1">Polyclinique Cité Nassib · 4 corps d&apos;état — DJI FU SARL</p>
         </div>
         <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full self-start mt-1">
           Juin 2026
@@ -114,7 +114,7 @@ export default function LotsPage() {
           <div>
             <p className="text-xs text-gray-500">Total marchés</p>
             <p className="text-lg font-bold text-blue-600">{fmt(totalMarches)}</p>
-            <p className="text-xs text-gray-400">6 lots techniques</p>
+            <p className="text-xs text-gray-400">4 corps d&apos;état</p>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-start gap-3 shadow-sm">
@@ -248,7 +248,7 @@ export default function LotsPage() {
 
         {/* Radial Chart (1/3) */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 h-fit">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Avancement par lot</h2>
+          <h2 className="text-sm font-semibold text-gray-700 mb-4">Avancement par corps d&apos;état</h2>
           <ResponsiveContainer width="100%" height={300}>
             <RadialBarChart
               cx="50%"

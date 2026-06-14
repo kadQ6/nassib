@@ -2,17 +2,16 @@
 import { useState } from 'react'
 import { CreditCard, TrendingUp, Clock, CheckCircle } from 'lucide-react'
 
-const fmt = (v: number) => new Intl.NumberFormat('fr-DZ', {maximumFractionDigits:0}).format(v) + ' DA'
+const fmt = (v: number) => new Intl.NumberFormat('fr-DJ', {maximumFractionDigits:0}).format(v) + ' FDJ'
 const fmtDate = (d?: string|null) => d ? new Date(d).toLocaleDateString('fr-FR') : '—'
 
 const PAIEMENTS = [
-  {id:'p1',lot:'LOT-01',lot_nom:'Gros Œuvre',entreprise:'BNTPH Construction',numero:'SIT-LOT01-001',montant_situation:85000000,montant_valide:82000000,date_situation:'2024-06-30',date_paiement:'2024-08-01',statut:'Payé'},
-  {id:'p2',lot:'LOT-01',lot_nom:'Gros Œuvre',entreprise:'BNTPH Construction',numero:'SIT-LOT01-002',montant_situation:95000000,montant_valide:93000000,date_situation:'2024-09-30',date_paiement:'2024-11-01',statut:'Payé'},
-  {id:'p3',lot:'LOT-01',lot_nom:'Gros Œuvre',entreprise:'BNTPH Construction',numero:'SIT-LOT01-003',montant_situation:65000000,montant_valide:65000000,date_situation:'2024-12-31',date_paiement:'2025-02-10',statut:'Payé'},
-  {id:'p4',lot:'LOT-01',lot_nom:'Gros Œuvre',entreprise:'BNTPH Construction',numero:'SIT-LOT01-004',montant_situation:45000000,montant_valide:null,date_situation:'2025-03-31',date_paiement:null,statut:'En attente'},
-  {id:'p5',lot:'LOT-02',lot_nom:'Courant Fort (CFO)',entreprise:'ElecMed Algérie',numero:'SIT-LOT02-001',montant_situation:22000000,montant_valide:21500000,date_situation:'2025-01-31',date_paiement:'2025-03-01',statut:'Payé'},
-  {id:'p6',lot:'LOT-02',lot_nom:'Courant Fort (CFO)',entreprise:'ElecMed Algérie',numero:'SIT-LOT02-002',montant_situation:18000000,montant_valide:null,date_situation:'2025-04-30',date_paiement:null,statut:'En attente'},
-  {id:'p7',lot:'LOT-05',lot_nom:'Gaz Médicaux',entreprise:'FluidMed Algérie',numero:'SIT-LOT05-001',montant_situation:12000000,montant_valide:11500000,date_situation:'2025-03-31',date_paiement:null,statut:'Validé'},
+  {id:'p1',lot:'CE-01',lot_nom:'Gros et second œuvre',entreprise:'DJI FU SARL',numero:'SIT-CE01-001',montant_situation:60000000,montant_valide:58000000,date_situation:'2025-01-31',date_paiement:'2025-03-15',statut:'Payé'},
+  {id:'p2',lot:'CE-01',lot_nom:'Gros et second œuvre',entreprise:'DJI FU SARL',numero:'SIT-CE01-002',montant_situation:40000000,montant_valide:40000000,date_situation:'2025-04-30',date_paiement:'2025-06-01',statut:'Payé'},
+  {id:'p3',lot:'CE-01',lot_nom:'Gros et second œuvre',entreprise:'DJI FU SARL',numero:'SIT-CE01-003',montant_situation:22000000,montant_valide:null,date_situation:'2025-07-31',date_paiement:null,statut:'En attente'},
+  {id:'p4',lot:'CE-02',lot_nom:'Électricité — courant faible — SI',entreprise:'DJI FU SARL',numero:'SIT-CE02-001',montant_situation:15000000,montant_valide:null,date_situation:'2025-06-30',date_paiement:null,statut:'En attente'},
+  {id:'p5',lot:'CE-03',lot_nom:'Fluides — climatisations',entreprise:'DJI FU SARL',numero:'SIT-CE03-001',montant_situation:18000000,montant_valide:null,date_situation:'2025-06-30',date_paiement:null,statut:'En attente'},
+  {id:'p6',lot:'CE-04',lot_nom:'Divers',entreprise:'DJI FU SARL',numero:'SIT-CE04-001',montant_situation:25000000,montant_valide:null,date_situation:'2025-05-31',date_paiement:null,statut:'Validé'},
 ]
 
 const STATUT_COLORS: Record<string,string> = {

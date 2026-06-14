@@ -180,17 +180,17 @@ export default function DashboardPage() {
           <p className="text-xs text-slate-400">bons de commande actifs</p>
         </div>
 
-        {/* Budget engagé */}
+        {/* Budget total */}
         <div className="bg-white rounded-xl shadow-sm p-6 flex flex-col gap-2">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Budget engagé
+            Budget total
           </p>
           <div className="flex items-end gap-1 leading-none">
             <span className="text-3xl font-black text-slate-800 tabular-nums leading-none">
-              850M
+              644,8M
             </span>
           </div>
-          <p className="text-xs text-slate-400 font-medium">DZD engagés</p>
+          <p className="text-xs text-slate-400 font-medium">FDJ — marché DJI FU SARL</p>
         </div>
       </div>
 

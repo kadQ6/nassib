@@ -3,25 +3,25 @@
 import { Truck, PackageCheck, Clock } from 'lucide-react'
 
 const COMMANDES = [
-  {id:'c1',numero:'CMD-2025-001',fournisseur:'GazMed Supply',date_commande:'2025-02-15',date_livraison_prevue:'2025-05-30',montant_total:42000000,statut:'Confirmée'},
-  {id:'c2',numero:'CMD-2025-002',fournisseur:'BioEquip Médical DZ',date_commande:'2025-03-01',date_livraison_prevue:'2025-06-15',montant_total:18500000,statut:'En cours'},
-  {id:'c3',numero:'CMD-2025-003',fournisseur:'ElecMed Algérie',date_commande:'2024-12-15',date_livraison_prevue:'2025-03-01',montant_total:25600000,statut:'Livrée'},
-  {id:'c4',numero:'CMD-2025-004',fournisseur:'Réseau Data',date_commande:'2025-01-10',date_livraison_prevue:'2025-04-30',montant_total:8200000,statut:'Partiellement livrée'},
+  {id:'c1',numero:'CMD-2025-001',fournisseur:'DJI FU SARL',date_commande:'2025-02-15',date_livraison_prevue:'2025-05-30',montant_total:42000000,statut:'Confirmée'},
+  {id:'c2',numero:'CMD-2025-002',fournisseur:'DJI FU SARL',date_commande:'2025-03-01',date_livraison_prevue:'2025-06-15',montant_total:18500000,statut:'En cours'},
+  {id:'c3',numero:'CMD-2025-003',fournisseur:'DJI FU SARL',date_commande:'2024-12-15',date_livraison_prevue:'2025-03-01',montant_total:25600000,statut:'Livrée'},
+  {id:'c4',numero:'CMD-2025-004',fournisseur:'DJI FU SARL',date_commande:'2025-01-10',date_livraison_prevue:'2025-04-30',montant_total:8200000,statut:'Partiellement livrée'},
 ]
 
 const LIVRAISONS = [
   {id:'l1',commande:'CMD-2025-003',date:'2025-03-02',fournisseur:'ElecMed',bon:'BL-2025-112',lieu:'Zone stockage RDC',statut:'Complète',articles:'Câbles CFO, Prises hospitalières'},
-  {id:'l2',commande:'CMD-2025-004',date:'2025-02-20',fournisseur:'Réseau Data',bon:'BL-2025-098',lieu:'Local technique RDC',statut:'Partielle',articles:'8 switches 24 ports, 4200ml Cat6'},
-  {id:'l3',commande:'CMD-2025-001',date:'2025-03-30',fournisseur:'GazMed Supply',bon:'BL-2025-145',lieu:'Zone chantier R+1',statut:'Partielle',articles:'180ml tuyauterie cuivre Ø15'},
+  {id:'l2',commande:'CMD-2025-004',date:'2025-02-20',fournisseur:'DJI FU SARL',bon:'BL-2025-098',lieu:'Local technique RDC',statut:'Partielle',articles:'8 switches 24 ports, 4200ml Cat6'},
+  {id:'l3',commande:'CMD-2025-001',date:'2025-03-30',fournisseur:'DJI FU SARL',bon:'BL-2025-145',lieu:'Zone chantier R+1',statut:'Partielle',articles:'180ml tuyauterie cuivre Ø15'},
   {id:'l4',commande:'CMD-2025-003',date:'2025-01-25',fournisseur:'ElecMed',bon:'BL-2025-062',lieu:'Zone stockage RDC',statut:'Complète',articles:'600ml câble UPS 3x2.5'},
   {id:'l5',commande:'CMD-2025-003',date:'2025-03-10',fournisseur:'ElecMed',bon:'BL-2025-134',lieu:'Zone stockage RDC',statut:'Partielle',articles:'120 prises hospitalières'},
-  {id:'l6',commande:'CMD-2025-004',date:'2025-01-20',fournisseur:'Réseau Data',bon:'BL-2025-055',lieu:'Local technique RDC',statut:'Complète',articles:'8 switches 24 ports manageable'},
+  {id:'l6',commande:'CMD-2025-004',date:'2025-01-20',fournisseur:'DJI FU SARL',bon:'BL-2025-055',lieu:'Local technique RDC',statut:'Complète',articles:'8 switches 24 ports manageable'},
 ]
 
 const PROCHAINES = [
-  { commande: 'CMD-2025-001', fournisseur: 'GazMed Supply', date_prevue: '2025-05-30', description: 'Solde tuyauterie cuivre O2 — 270ml restants + robinets' },
-  { commande: 'CMD-2025-002', fournisseur: 'BioEquip Médical DZ', date_prevue: '2025-06-15', description: 'Équipements biomédicaux lot 1 — incubateurs, moniteurs' },
-  { commande: 'CMD-2025-004', fournisseur: 'Réseau Data', date_prevue: '2025-04-30', description: 'Solde câble Cat6 — 4300ml restants' },
+  { commande: 'CMD-2025-001', fournisseur: 'DJI FU SARL', date_prevue: '2025-05-30', description: 'Solde tuyauterie cuivre O2 — 270ml restants + robinets' },
+  { commande: 'CMD-2025-002', fournisseur: 'DJI FU SARL', date_prevue: '2025-06-15', description: 'Équipements biomédicaux lot 1 — incubateurs, moniteurs' },
+  { commande: 'CMD-2025-004', fournisseur: 'DJI FU SARL', date_prevue: '2025-04-30', description: 'Solde câble Cat6 — 4300ml restants' },
 ]
 
 const CMD_STATUT_COLORS: Record<string, string> = {
@@ -45,7 +45,7 @@ function Badge({ label, cls }: { label: string; cls: string }) {
 }
 
 function formatDZA(n: number) {
-  return new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD', maximumFractionDigits: 0 }).format(n)
+  return new Intl.NumberFormat('fr-DJ', { maximumFractionDigits: 0 }).format(n) + ' FDJ'
 }
 
 function fmtDate(d: string) {

@@ -14,16 +14,20 @@ import {
 } from 'lucide-react'
 
 const PLANS = [
-  { id: 'p1', code: 'PL-RDC-01', nom: 'Plan RDC — Général', etage: 'RDC', type_plan: 'Architectural', version: 'B', date_revision: '2024-05-15', statut: 'Validé', nb_locaux: 15 },
-  { id: 'p2', code: 'PL-R01-01', nom: 'Plan R+1 — Chirurgie & Bloc', etage: 'R+1', type_plan: 'Architectural', version: 'A', date_revision: '2024-05-15', statut: 'Validé', nb_locaux: 13 },
-  { id: 'p3', code: 'PL-R02-01', nom: 'Plan R+2 — Maternité', etage: 'R+2', type_plan: 'Architectural', version: 'A', date_revision: '2024-06-01', statut: 'En cours', nb_locaux: 10 },
-  { id: 'p4', code: 'PL-R03-01', nom: 'Plan R+3 — Médecine & Pédiatrie', etage: 'R+3', type_plan: 'Architectural', version: 'A', date_revision: '2024-06-01', statut: 'En cours', nb_locaux: 10 },
-  { id: 'p5', code: 'PL-MEP-CFO', nom: 'Plan CFO — Tous niveaux', etage: 'Tous', type_plan: 'MEP-CFO', version: 'A', date_revision: '2024-06-15', statut: 'En cours', nb_locaux: 0 },
-  { id: 'p6', code: 'PL-MEP-CFA', nom: 'Plan CFA et Sécurité incendie', etage: 'Tous', type_plan: 'MEP-CFA', version: 'A', date_revision: '2024-06-15', statut: 'En cours', nb_locaux: 0 },
-  { id: 'p7', code: 'PL-MEP-GAZ', nom: 'Plan Gaz Médicaux', etage: 'Tous', type_plan: 'MEP-GAZ', version: 'A', date_revision: '2024-07-01', statut: 'En cours', nb_locaux: 0 },
-  { id: 'p8', code: 'PL-MEP-CVC', nom: 'Plan CVC et Ventilation', etage: 'Tous', type_plan: 'MEP-CVC', version: 'A', date_revision: '2024-07-01', statut: 'En cours', nb_locaux: 0 },
-  { id: 'p9', code: 'PL-STR-01', nom: 'Plan Structure — Fondations', etage: 'RDC', type_plan: 'Structure', version: 'B', date_revision: '2024-04-01', statut: 'Validé', nb_locaux: 0 },
-  { id: 'p10', code: 'PL-INCENDIE', nom: "Plan sécurité incendie — évacuation", etage: 'Tous', type_plan: 'Sécurité', version: 'A', date_revision: '2024-08-01', statut: 'En cours', nb_locaux: 0 },
+  // Plans architecturaux réels extraits des plans fournis
+  { id: 'p1',  code: 'PL-RDC-URG',  nom: 'Plan RDC — Urgences (Box 1-4, Déchocage, Petit Chir, Infirmerie, Labo, Bureaux)', etage: 'RDC', type_plan: 'Architectural', version: 'A', date_revision: '2024-10-27', statut: 'Validé', nb_locaux: 12 },
+  { id: 'p2',  code: 'PL-RDC-RAD',  nom: 'Plan RDC — Radiologie (SAS Patient, Salle de radiologie)',                        etage: 'RDC', type_plan: 'Architectural', version: 'A', date_revision: '2024-10-27', statut: 'Validé', nb_locaux: 2 },
+  { id: 'p3',  code: 'PL-RDC-CS',   nom: 'Plan RDC — Consultations (CS1-4, Dentaire, GYN 1-2)',                             etage: 'RDC', type_plan: 'Architectural', version: 'A', date_revision: '2024-10-27', statut: 'Validé', nb_locaux: 7 },
+  { id: 'p4',  code: 'PL-RDC-LOG',  nom: 'Plan RDC — Services généraux (Vestiaires H/F, Magasin, Pharmacie)',               etage: 'RDC', type_plan: 'Architectural', version: 'A', date_revision: '2024-10-27', statut: 'Validé', nb_locaux: 4 },
+  { id: 'p5',  code: 'PL-RDC-ADM',  nom: 'Plan RDC — Administration (Bureaux ADM, Salle attente)',                          etage: 'RDC', type_plan: 'Architectural', version: 'A', date_revision: '2024-10-27', statut: 'Validé', nb_locaux: 3 },
+  { id: 'p6',  code: 'PL-R01-MAT',  nom: "Plan R+1 — Maternité (Pré-travail, Travail, Bloc César., Réveil, Chambres 1-14, Bibonnerie)", etage: 'R+1', type_plan: 'Architectural', version: 'A', date_revision: '2024-10-27', statut: 'Validé', nb_locaux: 22 },
+  { id: 'p7',  code: 'PL-R02-MED',  nom: 'Plan R+2 — Médecine (Chambres Med 1-7, Hospit de Jour)',                          etage: 'R+2', type_plan: 'Architectural', version: 'A', date_revision: '2024-10-27', statut: 'En cours', nb_locaux: 8 },
+  // Plans techniques MEP
+  { id: 'p8',  code: 'PL-MEP-ELEC', nom: 'Plan Électricité CE-02 — Tous niveaux (CFO + CFA + SI)',                          etage: 'Tous', type_plan: 'MEP-CFO', version: 'A', date_revision: '2024-10-27', statut: 'En cours', nb_locaux: 0 },
+  { id: 'p9',  code: 'PL-MEP-FLUI', nom: 'Plan Fluides médicaux CE-03 — Réseau O₂ / Vide / Air médical',                   etage: 'Tous', type_plan: 'MEP-GAZ', version: 'A', date_revision: '2024-10-27', statut: 'En cours', nb_locaux: 0 },
+  { id: 'p10', code: 'PL-MEP-CVC',  nom: 'Plan CVC et climatisation — CE-03',                                               etage: 'Tous', type_plan: 'MEP-CVC', version: 'A', date_revision: '2024-10-27', statut: 'En cours', nb_locaux: 0 },
+  { id: 'p11', code: 'PL-STR-01',   nom: 'Plan Structure — Gros œuvre CE-01',                                               etage: 'RDC',  type_plan: 'Structure',  version: 'A', date_revision: '2024-10-27', statut: 'Validé', nb_locaux: 0 },
+  { id: 'p12', code: 'PL-SECU',     nom: 'Plan Sécurité incendie — Détection et évacuation',                                etage: 'Tous', type_plan: 'Sécurité',  version: 'A', date_revision: '2024-10-27', statut: 'En cours', nb_locaux: 0 },
 ]
 
 const TYPE_COLORS: Record<string, string> = {
@@ -74,7 +78,7 @@ export default function PlansPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Plans</h1>
-        <p className="text-sm text-gray-500 mt-1">10 plans · Gestion des révisions</p>
+        <p className="text-sm text-gray-500 mt-1">12 plans · Données réelles extraites des plans de masse · DJI FU SARL</p>
         <p className="text-xs text-gray-400 mt-0.5">Polyclinique Cité Nassib — Plans — Gestion documentaire des plans</p>
       </div>
 

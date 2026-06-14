@@ -101,7 +101,7 @@ export const TYPES_ESSAI = [
 ] as const
 
 export const formatMontant = (v: number) =>
-  new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD', maximumFractionDigits: 0 }).format(v)
+  new Intl.NumberFormat('fr-DJ', { maximumFractionDigits: 0 }).format(v) + ' FDJ'
 
 export const formatNum = (v: number) =>
   new Intl.NumberFormat('fr-FR').format(v)

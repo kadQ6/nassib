@@ -4,18 +4,18 @@ import { useState, useMemo } from 'react'
 import { CheckCircle2, Clock, AlertTriangle, ListChecks, User, MapPin, Calendar } from 'lucide-react'
 
 const TACHES = [
-  {id:'t1',code:'T-001',nom:"Tirage câbles CFO — R+1",phase:'Lots MEP',local:'R+1 Global',responsable:'ElecMed Algérie',priorite:'Haute',date_fin_prevue:'2025-04-30',avancement:35,statut:'En cours'},
-  {id:'t2',code:'T-002',nom:"Pose gaines CVC bloc opératoire",phase:'Lots MEP',local:'Bloc opératoire 1',responsable:'CVC Pro',priorite:'Critique',date_fin_prevue:'2025-05-15',avancement:20,statut:'En cours'},
-  {id:'t3',code:'T-003',nom:"Installation réseau distribution O2 — RDC",phase:'Lots MEP',local:'RDC Global',responsable:'FluidMed Algérie',priorite:'Critique',date_fin_prevue:'2025-05-01',avancement:15,statut:'En cours'},
-  {id:'t4',code:'T-004',nom:"Enduit plafond bloc opératoire",phase:'Second Œuvre',local:'Bloc opératoire 1',responsable:'BNTPH Construction',priorite:'Critique',date_fin_prevue:'2025-03-31',avancement:60,statut:'En retard'},
-  {id:'t5',code:'T-005',nom:"Carrelage chambre médecine 1",phase:'Second Œuvre',local:'Chambre médecine 1',responsable:'BNTPH Construction',priorite:'Normale',date_fin_prevue:'2025-04-15',avancement:80,statut:'En cours'},
-  {id:'t6',code:'T-006',nom:"Pose luminaires couloirs R+2",phase:'Lots MEP',local:'R+2 Couloirs',responsable:'ElecMed Algérie',priorite:'Basse',date_fin_prevue:'2025-05-30',avancement:10,statut:'En cours'},
-  {id:'t7',code:'T-007',nom:"Fondations — TERMINÉ",phase:'Gros Œuvre',local:'Général',responsable:'BNTPH Construction',priorite:'Critique',date_fin_prevue:'2024-05-31',avancement:100,statut:'Terminé'},
-  {id:'t8',code:'T-008',nom:"Structure béton — voiles et poteaux",phase:'Gros Œuvre',local:'Général',responsable:'BNTPH Construction',priorite:'Haute',date_fin_prevue:'2024-09-30',avancement:80,statut:'En cours'},
-  {id:'t9',code:'T-009',nom:"Menuiseries portes chambres R+3",phase:'Second Œuvre',local:'R+3 Chambres',responsable:'BNTPH Construction',priorite:'Normale',date_fin_prevue:'2025-04-30',avancement:0,statut:'Non démarré'},
-  {id:'t10',code:'T-010',nom:"Test pression réseau O2",phase:'Essais & Réception',local:'Global',responsable:'FluidMed Algérie',priorite:'Critique',date_fin_prevue:'2025-07-01',avancement:0,statut:'Non démarré'},
-  {id:'t11',code:'T-011',nom:"Mise en service TGBT principal",phase:'Lots MEP',local:'RDC-15',responsable:'ElecMed Algérie',priorite:'Critique',date_fin_prevue:'2025-05-15',avancement:50,statut:'En cours'},
-  {id:'t12',code:'T-012',nom:"Peinture salle d'attente RDC",phase:'Second Œuvre',local:'RDC-03',responsable:'BNTPH Construction',priorite:'Basse',date_fin_prevue:'2025-04-20',avancement:0,statut:'Non démarré'},
+  {id:'t1',code:'T-001',nom:"Fondations et radier — CE-01",phase:'Gros Œuvre',local:'Général',responsable:'DJI FU SARL',priorite:'Critique',date_fin_prevue:'2025-01-31',avancement:100,statut:'Terminé'},
+  {id:'t2',code:'T-002',nom:"Structure béton armé — voiles et poteaux",phase:'Gros Œuvre',local:'Tous niveaux',responsable:'DJI FU SARL',priorite:'Haute',date_fin_prevue:'2025-06-30',avancement:80,statut:'En cours'},
+  {id:'t3',code:'T-003',nom:"Maçonnerie et cloisons — Urgences RDC",phase:'Second Œuvre',local:'Box URG 1-4, Déchocage',responsable:'DJI FU SARL',priorite:'Haute',date_fin_prevue:'2025-09-30',avancement:60,statut:'En cours'},
+  {id:'t4',code:'T-004',nom:"Revêtements sols — Consultations RDC",phase:'Second Œuvre',local:'Bureau CS 1-4, Dentaire',responsable:'DJI FU SARL',priorite:'Normale',date_fin_prevue:'2026-03-31',avancement:10,statut:'En cours'},
+  {id:'t5',code:'T-005',nom:"Câblage électrique CE-02 — RDC",phase:'Lots MEP',local:'Urgences + Consultations RDC',responsable:'DJI FU SARL',priorite:'Haute',date_fin_prevue:'2025-12-31',avancement:20,statut:'En cours'},
+  {id:'t6',code:'T-006',nom:"Pose tuyauterie cuivre médicale 460ml — CE-03",phase:'Lots MEP',local:'Box URG 1-4, Bloc Césarienne, Salle Travail',responsable:'DJI FU SARL',priorite:'Critique',date_fin_prevue:'2026-03-31',avancement:15,statut:'En cours'},
+  {id:'t7',code:'T-007',nom:"Climatisation — groupes froids et splits CE-03",phase:'Lots MEP',local:'Tous locaux',responsable:'DJI FU SARL',priorite:'Haute',date_fin_prevue:'2026-06-30',avancement:10,statut:'En cours'},
+  {id:'t8',code:'T-008',nom:"Grille aluminium 2383ml façades — CE-04",phase:'Divers',local:'Façades',responsable:'DJI FU SARL',priorite:'Normale',date_fin_prevue:'2026-06-30',avancement:10,statut:'En cours'},
+  {id:'t9',code:'T-009',nom:"Clôture périmétrique 440ml — CE-04",phase:'Divers',local:'Périmètre',responsable:'DJI FU SARL',priorite:'Basse',date_fin_prevue:'2026-09-30',avancement:0,statut:'Non démarré'},
+  {id:'t10',code:'T-010',nom:"Enduits et peintures — Maternité R+1",phase:'Second Œuvre',local:'Chambres Maternité 1-14',responsable:'DJI FU SARL',priorite:'Normale',date_fin_prevue:'2026-06-30',avancement:5,statut:'En cours'},
+  {id:'t11',code:'T-011',nom:"Menuiseries portes — Bloc Césarienne",phase:'Second Œuvre',local:'Bloc Césarienne, Salle Réveil',responsable:'DJI FU SARL',priorite:'Critique',date_fin_prevue:'2025-12-31',avancement:20,statut:'En cours'},
+  {id:'t12',code:'T-012',nom:"Test pression réseau O₂/vide/air médicaux",phase:'Essais & Réception',local:'Box URG 1-4, Bloc Césarienne',responsable:'DJI FU SARL',priorite:'Critique',date_fin_prevue:'2026-09-30',avancement:0,statut:'Non démarré'},
 ]
 
 const STATUT_COLORS: Record<string, string> = {

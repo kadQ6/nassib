@@ -12,18 +12,18 @@ import {
 } from 'lucide-react'
 
 const DOCUMENTS = [
-  { id: 'd1', code: 'DOC-001', titre: 'Plan architectural RDC — Rev B', type: 'Plan', version: 'B', date_document: '2024-05-15', auteur: 'BET MedArch', statut: 'Validé', local: null },
-  { id: 'd2', code: 'DOC-002', titre: 'Note de calcul structure', type: 'Étude technique', version: 'A', date_document: '2024-04-01', auteur: 'BET MedArch', statut: 'Validé', local: null },
-  { id: 'd3', code: 'DOC-003', titre: 'Schéma unifilaire CFO', type: 'Schéma électrique', version: 'A', date_document: '2024-06-15', auteur: 'ElecMed Algérie', statut: 'En cours', local: null },
-  { id: 'd4', code: 'DOC-004', titre: 'Plan réseau gaz médicaux', type: 'Plan MEP', version: 'A', date_document: '2024-07-01', auteur: 'FluidMed Algérie', statut: 'En cours', local: null },
-  { id: 'd5', code: 'DOC-005', titre: 'CCTP Lot CFO', type: 'CCTP', version: 'A', date_document: '2024-03-15', auteur: 'BET MedArch', statut: 'Validé', local: null },
-  { id: 'd6', code: 'DOC-006', titre: 'CCTP Lot Gaz Médicaux', type: 'CCTP', version: 'A', date_document: '2024-03-15', auteur: 'BET MedArch', statut: 'Validé', local: null },
-  { id: 'd7', code: 'DOC-007', titre: 'PV réunion chantier #1', type: 'Compte rendu', version: 'A', date_document: '2025-01-06', auteur: 'M. Kader Omar', statut: 'Validé', local: null },
-  { id: 'd8', code: 'DOC-008', titre: 'Planning général Rev 2', type: 'Planning', version: 'B', date_document: '2024-12-01', auteur: 'BET MedArch', statut: 'Validé', local: null },
-  { id: 'd9', code: 'DOC-009', titre: 'Notice de sécurité incendie', type: 'Réglementaire', version: 'A', date_document: '2024-04-15', auteur: 'BET MedArch', statut: 'En cours', local: null },
-  { id: 'd10', code: 'DOC-010', titre: 'Protocole essais gaz médicaux', type: 'Procédure', version: 'A', date_document: '2025-01-15', auteur: 'FluidMed Algérie', statut: 'En cours', local: null },
-  { id: 'd11', code: 'DOC-011', titre: 'Fiche technique table opération Maquet', type: 'Fiche technique', version: 'A', date_document: '2025-02-01', auteur: 'BioEquip Médical', statut: 'Validé', local: 'R01-01 Bloc opératoire 1' },
-  { id: 'd12', code: 'DOC-012', titre: 'Rapport géotechnique site', type: 'Étude technique', version: 'A', date_document: '2024-02-01', auteur: 'BET MedArch', statut: 'Validé', local: null },
+  { id: 'd1', code: 'DOC-001', titre: 'Plan masse Urgences RDC — Box 1-4, Déchocage, Petit Chir', type: 'Plan', version: 'A', date_document: '2024-10-27', auteur: 'DJI FU SARL', statut: 'Validé', local: null },
+  { id: 'd2', code: 'DOC-002', titre: 'Plan masse Maternité R+1 — Bloc César., Chambres 1-14', type: 'Plan', version: 'A', date_document: '2024-10-27', auteur: 'DJI FU SARL', statut: 'Validé', local: null },
+  { id: 'd3', code: 'DOC-003', titre: 'BOQ complet — Bordereau des prix 27/10/2024', type: 'CCTP', version: 'A', date_document: '2024-10-27', auteur: 'DJI FU SARL', statut: 'Validé', local: null },
+  { id: 'd4', code: 'DOC-004', titre: 'Plan réseau gaz médicaux CE-03 — 460ml cuivre, 140 vannes', type: 'Plan MEP', version: 'A', date_document: '2024-10-27', auteur: 'DJI FU SARL', statut: 'En cours', local: null },
+  { id: 'd5', code: 'DOC-005', titre: 'Plan électricité CE-02 — GE 200kVA, armoires, distribution', type: 'Schéma électrique', version: 'A', date_document: '2024-10-27', auteur: 'DJI FU SARL', statut: 'En cours', local: null },
+  { id: 'd6', code: 'DOC-006', titre: 'Plan consultations RDC — CS1-4, Dentaire, GYN 1-2', type: 'Plan', version: 'A', date_document: '2024-10-27', auteur: 'DJI FU SARL', statut: 'Validé', local: null },
+  { id: 'd7', code: 'DOC-007', titre: 'PV réunion de chantier #1', type: 'Compte rendu', version: 'A', date_document: '2025-01-06', auteur: 'M. Kader Omar', statut: 'Validé', local: null },
+  { id: 'd8', code: 'DOC-008', titre: 'Planning général DJI FU SARL — Rev A', type: 'Planning', version: 'A', date_document: '2024-10-27', auteur: 'DJI FU SARL', statut: 'Validé', local: null },
+  { id: 'd9', code: 'DOC-009', titre: 'Notice sécurité incendie — détection et évacuation', type: 'Réglementaire', version: 'A', date_document: '2024-11-01', auteur: 'DJI FU SARL', statut: 'En cours', local: null },
+  { id: 'd10', code: 'DOC-010', titre: 'Protocole essais gaz médicaux — 46 prises O₂/vide/air', type: 'Procédure', version: 'A', date_document: '2025-01-15', auteur: 'DJI FU SARL', statut: 'En cours', local: null },
+  { id: 'd11', code: 'DOC-011', titre: 'Fiche technique table chirurgie — Bloc Césarienne', type: 'Fiche technique', version: 'A', date_document: '2025-02-01', auteur: 'DJI FU SARL', statut: 'Validé', local: 'MAT-BLC Bloc Césarienne' },
+  { id: 'd12', code: 'DOC-012', titre: 'Rapport géotechnique site — Cité Nassib Djibouti', type: 'Étude technique', version: 'A', date_document: '2024-09-01', auteur: 'DJI FU SARL', statut: 'Validé', local: null },
 ]
 
 const TYPE_TABS = [

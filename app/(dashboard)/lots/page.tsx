@@ -10,92 +10,68 @@ import { ChevronDown, ChevronRight, Briefcase, TrendingUp, Activity } from 'luci
 
 const LOTS = [
   {
-    id: 'lt1', code: 'LT-CFO', nom: 'Courant Fort Hospitalier',   type_lot: 'CFO',
-    montant_marche: 85000000, avancement: 40, statut: 'En cours',
-    entreprise: 'ElecMed Algérie', date_debut: '2024-09-01', date_fin_prevue: '2025-06-30',
+    id: 'lt1', code: 'CE-01', nom: 'Gros et second œuvre', type_lot: 'GC',
+    montant_marche: 359251239, avancement: 45, statut: 'En cours',
+    entreprise: 'DJI FU SARL', date_debut: '2024-10-27', date_fin_prevue: '2026-12-31',
   },
   {
-    id: 'lt2', code: 'LT-CFA', nom: 'Courant Faible et Sécurité', type_lot: 'CFA',
-    montant_marche: 45000000, avancement: 30, statut: 'En cours',
-    entreprise: 'ElecMed Algérie', date_debut: '2024-10-01', date_fin_prevue: '2025-07-31',
+    id: 'lt2', code: 'CE-02', nom: 'Électricité — courant faible — sécurité incendie', type_lot: 'ÉLEC',
+    montant_marche: 82511410, avancement: 20, statut: 'En cours',
+    entreprise: 'DJI FU SARL', date_debut: '2024-10-27', date_fin_prevue: '2026-12-31',
   },
   {
-    id: 'lt3', code: 'LT-VDI', nom: 'Réseau VDI et Informatique', type_lot: 'VDI',
-    montant_marche: 25000000, avancement: 20, statut: 'En cours',
-    entreprise: 'Réseau Data', date_debut: '2024-11-01', date_fin_prevue: '2025-07-31',
+    id: 'lt3', code: 'CE-03', nom: 'Fluides — climatisations', type_lot: 'FLUIDES',
+    montant_marche: 115553060, avancement: 15, statut: 'En cours',
+    entreprise: 'DJI FU SARL', date_debut: '2024-10-27', date_fin_prevue: '2026-12-31',
   },
   {
-    id: 'lt4', code: 'LT-GAZ', nom: 'Gaz Médicaux',              type_lot: 'GAZ',
-    montant_marche: 65000000, avancement: 20, statut: 'En cours',
-    entreprise: 'FluidMed Algérie', date_debut: '2024-10-01', date_fin_prevue: '2025-08-31',
-  },
-  {
-    id: 'lt5', code: 'LT-PLOMB', nom: 'Plomberie et Sanitaires',  type_lot: 'PLOMBERIE',
-    montant_marche: 38000000, avancement: 35, statut: 'En cours',
-    entreprise: 'FluidMed Algérie', date_debut: '2024-09-01', date_fin_prevue: '2025-05-31',
-  },
-  {
-    id: 'lt6', code: 'LT-CVC', nom: 'CVC et Traitement Air',     type_lot: 'CVC',
-    montant_marche: 72000000, avancement: 25, statut: 'En cours',
-    entreprise: 'CVC Pro', date_debut: '2024-10-01', date_fin_prevue: '2025-08-31',
+    id: 'lt4', code: 'CE-04', nom: 'Divers', type_lot: 'DIVERS',
+    montant_marche: 87486288, avancement: 10, statut: 'En cours',
+    entreprise: 'DJI FU SARL', date_debut: '2024-10-27', date_fin_prevue: '2026-12-31',
   },
 ]
 
 const LOT_LOCAUX: Record<string, string[]> = {
-  lt1: ['Bloc opératoire N°1', 'Salle de réveil', 'Réanimation adultes', 'Urgences (box)', 'Local TGBT RDC'],
-  lt2: ['Centrale incendie – local technique', 'Couloir RDC (détecteurs)', 'Hall entrée (CCTV)', 'Salle serveurs', 'Parking (contrôle accès)'],
-  lt3: ['Salle serveurs principal', 'Accueil patients', 'Consultation N°1', 'Consultation N°2', 'Bureau direction'],
-  lt4: ['Bloc opératoire N°1', 'SSPI (salle réveil)', 'Réanimation adultes', 'Maternité', 'Urgences (box)'],
-  lt5: ['Bloc opératoire N°1', 'Salle de réveil', 'Cuisine centrale', 'Sanitaires RDC', 'Buanderie'],
-  lt6: ['Bloc opératoire N°1 (salle blanche)', 'SSPI', 'Réanimation adultes', 'Consultation N°1', 'Hall principal'],
+  lt1: ['Box Urgences 1-4', 'Déchocage', 'Petit Chir URG', 'Salle Radiologie', 'Bureau CS 1-4', 'Cabinet Dentaire', 'Bloc Césarienne', 'Chambres Maternité 1-14', 'Chambre Med 1-7'],
+  lt2: ['Box Urgences 1-4 (moniteurs/prises)', 'Salle Radiologie (tableau élec)', 'Bureau CS 1-4', 'Infirmerie URG', 'Bloc Césarienne', 'Salle Réveil'],
+  lt3: ['Box Urgences 1-4 (O₂/vide/air)', 'Déchocage', 'Bloc Césarienne', 'Salle Travail', 'Salle Réveil', 'Climatisation tous locaux'],
+  lt4: ['Façades — grille alu 2383ml', 'Auvent 82m²', 'Clôture périmétrique 440ml', 'Portails motorisés ×2'],
 }
 
 const LOT_CHECKLIST: Record<string, { label: string; done: boolean }[]> = {
   lt1: [
-    { label: 'Étude d\'exécution validée', done: true  },
-    { label: 'Câblage TGBT terminé',       done: true  },
-    { label: 'Essais et mise en service',  done: false },
+    { label: 'Étude d\'exécution validée',    done: true  },
+    { label: 'Structure béton armé (80%)',     done: false },
+    { label: 'Second œuvre et finitions',      done: false },
   ],
   lt2: [
-    { label: 'Plan câblage CFA approuvé',  done: true  },
-    { label: 'Pose détecteurs (60%)',       done: false },
-    { label: 'Paramétrage centrale',        done: false },
+    { label: 'Plan électricité approuvé',      done: true  },
+    { label: 'GE 200 kVA installé',            done: false },
+    { label: 'Essais et mise en service',      done: false },
   ],
   lt3: [
-    { label: 'Schéma réseau validé',        done: true  },
-    { label: 'Tirage câbles Cat6A (40%)',   done: false },
-    { label: 'Tests de connectivité',       done: false },
+    { label: 'Plan fluides validé',            done: true  },
+    { label: 'Réseau cuivre posé (20%)',       done: false },
+    { label: 'Essais pression gaz médicaux',   done: false },
   ],
   lt4: [
-    { label: 'Plan réseau gaz approuvé',   done: true  },
-    { label: 'Pose tuyauterie cuivre (20%)',done: false },
-    { label: 'Essais pression réseau',      done: false },
-  ],
-  lt5: [
-    { label: 'Plan plomberie visé',         done: true  },
-    { label: 'Colonnes montantes posées',   done: true  },
-    { label: 'Appareils sanitaires (10%)',  done: false },
-  ],
-  lt6: [
-    { label: 'Étude thermique approuvée',  done: true  },
-    { label: 'Gaines posées (30%)',         done: false },
-    { label: 'Mise en service groupes',     done: false },
+    { label: 'Plans façades approuvés',        done: true  },
+    { label: 'Grilles alu en cours',           done: false },
+    { label: 'Clôture et portails',            done: false },
   ],
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  CFO:      'bg-yellow-100 text-yellow-700',
-  CFA:      'bg-purple-100 text-purple-700',
-  VDI:      'bg-blue-100 text-blue-700',
-  GAZ:      'bg-cyan-100 text-cyan-700',
-  PLOMBERIE:'bg-teal-100 text-teal-700',
-  CVC:      'bg-sky-100 text-sky-700',
+  GC:      'bg-stone-100 text-stone-700',
+  ÉLEC:    'bg-yellow-100 text-yellow-700',
+  FLUIDES: 'bg-cyan-100 text-cyan-700',
+  DIVERS:  'bg-purple-100 text-purple-700',
 }
 
-const RADIAL_COLORS = ['#eab308','#a855f7','#3b82f6','#06b6d4','#14b8a6','#0ea5e9']
+const RADIAL_COLORS = ['#78716c', '#eab308', '#06b6d4', '#a855f7']
 
 const fmt = (v: number) =>
-  new Intl.NumberFormat('fr-DZ', { maximumFractionDigits: 0 }).format(v) + ' DZA'
+  new Intl.NumberFormat('fr-DJ', { maximumFractionDigits: 0 }).format(v) + ' FDJ'
 
 // ── Component ─────────────────────────────────────────────────────────────────
 

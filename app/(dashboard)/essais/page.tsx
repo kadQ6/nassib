@@ -3,16 +3,16 @@ import { useState } from 'react'
 import { FlaskConical, CheckCircle, Clock, AlertCircle, Search, Filter } from 'lucide-react'
 
 const ESSAIS = [
-  {id:'e1',code:'ESS-RDC15-ELEC',nom:'Essai TGBT — isolement et disjonction',local:'Local technique RDC',local_code:'RDC-15',type:'Électrique',date_prevue:'2025-05-15',responsable:'ElecMed Algérie',statut:'Planifié',resultat:null},
-  {id:'e2',code:'ESS-BO1-GAZ',nom:'Essai pression réseau O2 bloc opératoire',local:'Bloc opératoire 1',local_code:'R01-01',type:'Gaz médicaux',date_prevue:'2025-07-01',responsable:'FluidMed Algérie',statut:'Planifié',resultat:null},
-  {id:'e3',code:'ESS-BO1-CVC',nom:'Essai débit et pression air soufflé bloc',local:'Bloc opératoire 1',local_code:'R01-01',type:'Ventilation',date_prevue:'2025-07-15',responsable:'CVC Pro',statut:'Planifié',resultat:null},
-  {id:'e4',code:'ESS-RDC09-ELEC',nom:'Essai prises et éclairage consultation 1',local:'Consultation 1',local_code:'RDC-09',type:'Électrique',date_prevue:'2025-04-01',responsable:'ElecMed Algérie',statut:'Planifié',resultat:null},
-  {id:'e5',code:'ESS-RDC10-ELEC',nom:'Essai prises et éclairage consultation 2',local:'Consultation 2',local_code:'RDC-10',type:'Électrique',date_prevue:'2025-04-01',date_realisee:'2025-04-02',responsable:'ElecMed Algérie',statut:'Terminé',resultat:'Conforme',valeur_mesuree:'230V, DR<0.5s'},
-  {id:'e6',code:'ESS-SSPI-GAZ',nom:'Essai réseau O2 SSPI',local:'SSPI — Salle de réveil',local_code:'R01-03',type:'Gaz médicaux',date_prevue:'2025-07-01',responsable:'FluidMed Algérie',statut:'Planifié',resultat:null},
-  {id:'e7',code:'ESS-ACC1-GAZ',nom:"Essai prise O2 et vide salle d'accouchement",local:"Salle d'accouchement 1",local_code:'R02-01',type:'Gaz médicaux',date_prevue:'2025-07-15',responsable:'FluidMed Algérie',statut:'Planifié',resultat:null},
-  {id:'e8',code:'ESS-CVC-GEN',nom:'Essai CTA — débits et filtrages tous niveaux',local:'Locaux techniques',local_code:'CTA',type:'Ventilation',date_prevue:'2025-08-01',responsable:'CVC Pro',statut:'Planifié',resultat:null},
-  {id:'e9',code:'ESS-PLB-RDC',nom:'Essai hydraulique plomberie RDC',local:'Plomberie RDC',local_code:'RDC',type:'Hydraulique',date_prevue:'2025-04-15',responsable:'FluidMed Algérie',statut:'En cours',resultat:null},
-  {id:'e10',code:'ESS-ELEC-NEO',nom:'Essai circuits UPS néonatologie',local:'Unité néonatologie',local_code:'R02-04',type:'Électrique',date_prevue:'2025-06-01',responsable:'ElecMed Algérie',statut:'Planifié',resultat:null},
+  {id:'e1',code:'ESS-TGBT-ELEC',nom:'Essai GE 200 kVA — démarrage et basculement',local:'Local technique RDC',local_code:'URG-STK',type:'Électrique',date_prevue:'2026-06-30',responsable:'DJI FU SARL',statut:'Planifié',resultat:null},
+  {id:'e2',code:'ESS-URG-GAZ',nom:'Essai pression réseau O₂ — Box Urgences 1-4',local:'Box Urgences 1-4',local_code:'URG-BOX1',type:'Gaz médicaux',date_prevue:'2026-08-01',responsable:'DJI FU SARL',statut:'Planifié',resultat:null},
+  {id:'e3',code:'ESS-DEC-GAZ',nom:'Essai O₂ et vide médical — Déchocage',local:'Salle de Déchocage',local_code:'URG-DEC',type:'Gaz médicaux',date_prevue:'2026-08-01',responsable:'DJI FU SARL',statut:'Planifié',resultat:null},
+  {id:'e4',code:'ESS-BLC-GAZ',nom:'Essai pression O₂/vide/air — Bloc Césarienne',local:'Bloc Césarienne',local_code:'MAT-BLC',type:'Gaz médicaux',date_prevue:'2026-09-01',responsable:'DJI FU SARL',statut:'Planifié',resultat:null},
+  {id:'e5',code:'ESS-TRAV-GAZ',nom:'Essai O₂ salle de travail',local:'Salle de Travail',local_code:'MAT-TRAV',type:'Gaz médicaux',date_prevue:'2026-09-01',responsable:'DJI FU SARL',statut:'Planifié',resultat:null},
+  {id:'e6',code:'ESS-CS1-ELEC',nom:'Essai prises et éclairage Bureau CS 1',local:'Bureau CS 1',local_code:'CS-01',type:'Électrique',date_prevue:'2026-05-30',responsable:'DJI FU SARL',statut:'En cours',resultat:null},
+  {id:'e7',code:'ESS-RAD-ELEC',nom:'Essai Salle de Radiologie — tableau élec + Potter',local:'Salle de Radiologie',local_code:'RAD-SALLE',type:'Électrique',date_prevue:'2026-07-01',responsable:'DJI FU SARL',statut:'Planifié',resultat:null},
+  {id:'e8',code:'ESS-CVC-URG',nom:'Essai climatisation — Urgences RDC',local:'Box URG 1-4, Déchocage',local_code:'URG-BOX1',type:'Ventilation',date_prevue:'2026-07-15',responsable:'DJI FU SARL',statut:'Planifié',resultat:null},
+  {id:'e9',code:'ESS-PLB-MAT',nom:'Essai hydraulique plomberie — Maternité R+1',local:'Maternité R+1',local_code:'MAT-INF',type:'Hydraulique',date_prevue:'2026-06-15',responsable:'DJI FU SARL',statut:'En cours',resultat:null},
+  {id:'e10',code:'ESS-VAN-140',nom:'Essai 140 vannes sectionnement gaz médicaux',local:'Réseau gaz médicaux',local_code:'MAT-BLC',type:'Gaz médicaux',date_prevue:'2026-09-30',responsable:'DJI FU SARL',statut:'Planifié',resultat:null},
 ]
 
 const STATUT_COLORS: Record<string,string> = {

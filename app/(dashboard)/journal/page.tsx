@@ -95,14 +95,14 @@ const INITIAL_REPORTS: DailyReport[] = [
     meteo: "Ensoleillé",
     temperature: 34,
     effectifs: [
-      { entreprise: "SETAB", effectif: 15, qualification: "Ouvriers GC" },
-      { entreprise: "ElecPro", effectif: 8, qualification: "Électriciens" },
-      { entreprise: "ClimaMed", effectif: 4, qualification: "Techniciens CVC" },
+      { entreprise: "DJI FU SARL", effectif: 15, qualification: "Ouvriers GC" },
+      { entreprise: "DJI FU SARL", effectif: 8, qualification: "Électriciens" },
+      { entreprise: "DJI FU SARL", effectif: 4, qualification: "Techniciens CVC" },
     ],
     totalEffectif: 27,
-    zones: ["RDC", "R+1", "Bloc obstétrique"],
+    zones: ["RDC", "R+1", "Pré-travail / Salle Travail"],
     travauxRealises:
-      "Coulage dalle R+1 bloc obstétrique terminé. Installation câblage CFO RDC en cours. Pose CTA sous-sol démarrée.",
+      "Coulage dalle R+1 Pré-travail terminé. Installation câblage CFO RDC en cours. Pose CTA sous-sol démarrée.",
     incidents:
       "Chute de matériel mineure (sans blessés), signalée au chef de chantier. Rapport incident établi.",
     visites:
@@ -118,8 +118,8 @@ const INITIAL_REPORTS: DailyReport[] = [
     meteo: "Nuageux",
     temperature: 28,
     effectifs: [
-      { entreprise: "SETAB", effectif: 12, qualification: "Ouvriers GC" },
-      { entreprise: "ElecPro", effectif: 6, qualification: "Électriciens" },
+      { entreprise: "DJI FU SARL", effectif: 12, qualification: "Ouvriers GC" },
+      { entreprise: "DJI FU SARL", effectif: 6, qualification: "Électriciens" },
     ],
     totalEffectif: 18,
     zones: ["RDC", "Sous-sol"],
@@ -137,24 +137,24 @@ const INITIAL_REPORTS: DailyReport[] = [
     meteo: "Ensoleillé",
     temperature: 32,
     effectifs: [
-      { entreprise: "SETAB", effectif: 14, qualification: "Ouvriers GC" },
-      { entreprise: "ClimaMed", effectif: 6, qualification: "Techniciens CVC" },
+      { entreprise: "DJI FU SARL", effectif: 14, qualification: "Ouvriers GC" },
+      { entreprise: "DJI FU SARL", effectif: 6, qualification: "Techniciens CVC" },
       {
-        entreprise: "FluideMed",
+        entreprise: "DJI FU SARL",
         effectif: 3,
         qualification: "Techniciens fluides",
       },
     ],
     totalEffectif: 23,
-    zones: ["R+1", "Bloc opératoire", "Urgences"],
+    zones: ["R+1", "Bloc Césarienne", "Urgences"],
     travauxRealises:
-      "Pose gaines CVC niveau R+1 bloc opératoire. Installation centrale de traitement d'air (CTA). Réseau plomberie urgences en cours.",
+      "Pose gaines CVC niveau R+1 Bloc Césarienne. Installation centrale de traitement d'air (CTA). Réseau plomberie urgences en cours.",
     incidents: "",
     visites: "Architecte Mme Ouali - visite coordination 10h00.",
     instructions:
       "Coordination passage gaines CVC/CFO à vérifier avant fermeture faux plafonds.",
     blocages:
-      "Plans d'exécution fluides médicaux non encore approuvés - travaux partiellement suspendus bloc opératoire.",
+      "Plans d'exécution fluides médicaux non encore approuvés - travaux partiellement suspendus Bloc Césarienne.",
     redacteur: "M. Farid",
   },
 ];
@@ -164,8 +164,10 @@ const ALL_ZONES = [
   "R+1",
   "R+2",
   "Sous-sol",
-  "Bloc opératoire",
-  "Bloc obstétrique",
+  "Bloc Césarienne",
+  "Pré-travail / Salle Travail",
+  "Box URG 1-4",
+  "Déchocage",
   "Urgences",
   "Laboratoire",
 ];
@@ -549,7 +551,7 @@ function ReportFormModal({ open, onClose, onSubmit }: ReportFormModalProps) {
                           onChange={(e) =>
                             updateEffectif(idx, "entreprise", e.target.value)
                           }
-                          placeholder="SETAB"
+                          placeholder="DJI FU SARL"
                           className={inputCls}
                         />
                       </TableCell>

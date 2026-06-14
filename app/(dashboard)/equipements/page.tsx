@@ -41,7 +41,7 @@ const STATUT_COLORS: Record<string, string> = {
 
 const CHART_COLORS = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#f97316']
 
-function formatDZA(n: number) {
+function formatFDJ(n: number) {
   return new Intl.NumberFormat('fr-DJ', { maximumFractionDigits: 0 }).format(n) + ' FDJ'
 }
 
@@ -220,7 +220,7 @@ export default function EquipementsPage() {
                   <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{e.categorie}</td>
                   <td className="px-4 py-3 text-right text-slate-700 font-semibold">{e.quantite}</td>
                   <td className="px-4 py-3 text-right text-slate-700 whitespace-nowrap font-semibold">
-                    {formatDZA(e.quantite * e.prix_unitaire)}
+                    {formatFDJ(e.quantite * e.prix_unitaire)}
                   </td>
                   <td className="px-4 py-3 text-center text-slate-500 whitespace-nowrap text-xs">
                     {new Date(e.date_livraison_prevue).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -250,7 +250,7 @@ export default function EquipementsPage() {
             {filtered.length} équipement{filtered.length > 1 ? 's' : ''} sélectionné{filtered.length > 1 ? 's' : ''}
           </span>
           <span className="font-bold text-slate-800">
-            Total : {formatDZA(filtered.reduce((s, e) => s + e.quantite * e.prix_unitaire, 0))}
+            Total : {formatFDJ(filtered.reduce((s, e) => s + e.quantite * e.prix_unitaire, 0))}
           </span>
         </div>
       </div>

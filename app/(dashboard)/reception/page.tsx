@@ -196,16 +196,16 @@ const ESSAIS_MOCK: Essai[] = [
 ];
 
 const LOCAL_LIST: string[] = [
-  "Salle de naissance 01",
-  "Salle de naissance 02",
-  "Bloc opératoire 01",
-  "Bloc opératoire 02",
-  "Salle de réveil",
-  "Urgences adultes",
-  "Urgences pédiatriques",
-  "Laboratoire",
-  "Pharmacie",
-  "Bureau médecin 01",
+  "Salle Travail",
+  "Pré-travail",
+  "Bloc Césarienne",
+  "Salle Réveil",
+  "Box URG 1",
+  "Box URG 2",
+  "Box URG 3",
+  "Déchocage",
+  "Laboratoire RDC",
+  "Bureau CS 1",
 ];
 
 const CHECKLIST_LABELS: string[] = [
@@ -227,7 +227,7 @@ const CHECKLIST_LABELS: string[] = [
 ];
 
 function buildChecklist(localName: string): ChecklistItem[] {
-  const checkedCount = localName === "Bloc opératoire 01" ? 5 : 3;
+  const checkedCount = localName === "Bloc Césarienne" ? 5 : 3;
   return CHECKLIST_LABELS.map((label, idx) => ({
     id: idx + 1,
     label,
@@ -808,7 +808,7 @@ function DOETab() {
 export default function ReceptionPage() {
   const [essais, setEssais] = useState<Essai[]>(ESSAIS_MOCK);
   const [checklists, setChecklists] = useState<Record<string, ChecklistItem[]>>(INITIAL_CHECKLISTS);
-  const [selectedLocal, setSelectedLocal] = useState<string>("Bloc opératoire 01");
+  const [selectedLocal, setSelectedLocal] = useState<string>("Bloc Césarienne");
 
   function handleAddEssai(e: Essai) {
     setEssais((prev) => [...prev, e]);

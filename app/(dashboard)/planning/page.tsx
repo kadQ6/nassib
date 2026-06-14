@@ -7,62 +7,62 @@ import { ChevronDown, ChevronRight, CalendarDays, Clock, CheckCircle2, AlertCirc
 
 const PHASES = [
   {
-    id: 'ph1', nom: 'Gros Œuvre', date_debut: '2024-03-01', date_fin: '2024-11-30',
+    id: 'ph1', nom: 'Gros Œuvre', date_debut: '2024-10-27', date_fin: '2025-12-31',
     avancement: 75, statut: 'En cours',
     taches: [
-      { nom: 'Fondations et radier',       debut: '2024-10-27', fin: '2025-01-31', avancement: 100, responsable: 'DJI FU SARL', priorite: 'Critique' },
-      { nom: 'Structure béton armé',        debut: '2024-11-01', fin: '2025-06-30', avancement:  80, responsable: 'DJI FU SARL', priorite: 'Haute'    },
-      { nom: 'Maçonnerie briques',          debut: '2025-01-01', fin: '2025-09-30', avancement:  60, responsable: 'DJI FU SARL', priorite: 'Normale'  },
-      { nom: 'Enduits et crépis',           debut: '2025-06-01', fin: '2025-12-31', avancement:  30, responsable: 'DJI FU SARL', priorite: 'Normale'  },
+      { nom: 'Fondations et radier',       debut: '2024-10-27', fin: '2025-03-31', avancement: 100, responsable: 'DJI FU SARL', priorite: 'Critique' },
+      { nom: 'Structure béton armé',        debut: '2025-01-01', fin: '2025-09-30', avancement:  80, responsable: 'DJI FU SARL', priorite: 'Haute'    },
+      { nom: 'Maçonnerie briques',          debut: '2025-06-01', fin: '2025-12-31', avancement:  60, responsable: 'DJI FU SARL', priorite: 'Normale'  },
+      { nom: 'Enduits et crépis',           debut: '2025-09-01', fin: '2025-12-31', avancement:  30, responsable: 'DJI FU SARL', priorite: 'Normale'  },
     ],
   },
   {
-    id: 'ph2', nom: 'Second Œuvre', date_debut: '2024-08-01', date_fin: '2025-06-30',
+    id: 'ph2', nom: 'Second Œuvre', date_debut: '2025-07-01', date_fin: '2026-09-30',
     avancement: 30, statut: 'En cours',
     taches: [
-      { nom: 'Cloisons et doublages',       debut: '2025-03-01', fin: '2025-10-31', avancement:  50, responsable: 'DJI FU SARL', priorite: 'Haute'   },
-      { nom: 'Menuiseries intérieures',     debut: '2025-06-01', fin: '2026-01-31', avancement:  20, responsable: 'DJI FU SARL', priorite: 'Normale' },
-      { nom: 'Revêtements sols',            debut: '2025-09-01', fin: '2026-03-31', avancement:  10, responsable: 'DJI FU SARL', priorite: 'Normale' },
-      { nom: 'Peintures et finitions',      debut: '2026-01-01', fin: '2026-06-30', avancement:   5, responsable: 'DJI FU SARL', priorite: 'Basse'   },
+      { nom: 'Cloisons et doublages',       debut: '2025-07-01', fin: '2026-03-31', avancement:  50, responsable: 'DJI FU SARL', priorite: 'Haute'   },
+      { nom: 'Menuiseries intérieures',     debut: '2025-10-01', fin: '2026-05-31', avancement:  20, responsable: 'DJI FU SARL', priorite: 'Normale' },
+      { nom: 'Revêtements sols',            debut: '2026-01-01', fin: '2026-07-31', avancement:  10, responsable: 'DJI FU SARL', priorite: 'Normale' },
+      { nom: 'Peintures et finitions',      debut: '2026-05-01', fin: '2026-09-30', avancement:   0, responsable: 'DJI FU SARL', priorite: 'Basse'   },
     ],
   },
   {
-    id: 'ph3', nom: 'Lots MEP', date_debut: '2024-09-01', date_fin: '2025-08-31',
-    avancement: 22, statut: 'En cours',
+    id: 'ph3', nom: 'Lots MEP (CE-02 / CE-03)', date_debut: '2025-03-01', date_fin: '2026-10-31',
+    avancement: 18, statut: 'En cours',
     taches: [
-      { nom: 'Courant fort CFO',            debut: '2024-09-01', fin: '2025-06-30', avancement:  40, responsable: 'DJI FU SARL',      priorite: 'Haute'    },
-      { nom: 'Gaz médicaux',               debut: '2024-10-01', fin: '2025-08-31', avancement:  20, responsable: 'DJI FU SARL',     priorite: 'Critique' },
-      { nom: 'CVC et ventilation',          debut: '2024-10-01', fin: '2025-08-31', avancement:  25, responsable: 'DJI FU SARL',      priorite: 'Haute'    },
-      { nom: 'Réseau VDI',                 debut: '2024-11-01', fin: '2025-07-31', avancement:  20, responsable: 'DJI FU SARL',  priorite: 'Normale'  },
+      { nom: 'Électricité / CFA / SI (CE-02)',  debut: '2025-03-01', fin: '2026-09-30', avancement:  20, responsable: 'DJI FU SARL', priorite: 'Haute'    },
+      { nom: 'Fluides médicaux O2/Vide (CE-03)',debut: '2025-04-01', fin: '2026-10-31', avancement:  15, responsable: 'DJI FU SARL', priorite: 'Critique' },
+      { nom: 'Climatisation / CVC (CE-03)',      debut: '2025-05-01', fin: '2026-10-31', avancement:  15, responsable: 'DJI FU SARL', priorite: 'Haute'    },
+      { nom: 'Divers / Signalétique (CE-04)',    debut: '2025-06-01', fin: '2026-09-30', avancement:  10, responsable: 'DJI FU SARL', priorite: 'Normale'  },
     ],
   },
   {
-    id: 'ph4', nom: 'Équipements', date_debut: '2025-04-01', date_fin: '2025-11-30',
+    id: 'ph4', nom: 'Équipements Biomédicaux', date_debut: '2026-06-01', date_fin: '2026-11-30',
     avancement: 5, statut: 'Non démarré',
     taches: [
-      { nom: 'Équipements biomédicaux',     debut: '2025-07-01', fin: '2025-11-30', avancement:   0, responsable: 'DJI FU SARL',    priorite: 'Critique' },
-      { nom: 'Mobilier médical',            debut: '2025-06-01', fin: '2025-10-31', avancement:   0, responsable: 'DJI FU SARL',     priorite: 'Haute'    },
-      { nom: 'Équipements laboratoire',     debut: '2025-07-01', fin: '2025-10-31', avancement:   0, responsable: 'À définir',   priorite: 'Normale'  },
-      { nom: 'Signalétique',               debut: '2025-09-01', fin: '2025-11-30', avancement:   0, responsable: 'À définir',   priorite: 'Basse'    },
+      { nom: 'Équipements biomédicaux',     debut: '2026-07-01', fin: '2026-11-30', avancement:   0, responsable: 'DJI FU SARL', priorite: 'Critique' },
+      { nom: 'Mobilier médical',            debut: '2026-06-01', fin: '2026-10-31', avancement:   0, responsable: 'DJI FU SARL', priorite: 'Haute'    },
+      { nom: 'Équipements laboratoire',     debut: '2026-07-01', fin: '2026-10-31', avancement:   0, responsable: 'À définir',   priorite: 'Normale'  },
+      { nom: 'Signalétique finale',         debut: '2026-09-01', fin: '2026-11-30', avancement:   0, responsable: 'DJI FU SARL', priorite: 'Basse'    },
     ],
   },
   {
-    id: 'ph5', nom: 'Essais & Réception', date_debut: '2025-10-01', date_fin: '2025-12-31',
+    id: 'ph5', nom: 'Essais & Réception', date_debut: '2026-10-01', date_fin: '2026-12-31',
     avancement: 0, statut: 'Non démarré',
     taches: [
-      { nom: 'Essais techniques MEP',       debut: '2025-10-01', fin: '2025-11-30', avancement:   0, responsable: 'DJI FU SARL', priorite: 'Critique' },
-      { nom: 'OPR et réserves',            debut: '2025-11-01', fin: '2025-12-15', avancement:   0, responsable: 'M. Kader Omar',       priorite: 'Critique' },
-      { nom: 'Levée des réserves',          debut: '2025-12-01', fin: '2025-12-20', avancement:   0, responsable: 'DJI FU SARL', priorite: 'Haute'    },
-      { nom: 'Réception définitive',        debut: '2025-12-20', fin: '2025-12-31', avancement:   0, responsable: 'M. Kader Omar',       priorite: 'Critique' },
+      { nom: 'Essais techniques MEP',       debut: '2026-10-01', fin: '2026-11-30', avancement:   0, responsable: 'DJI FU SARL',    priorite: 'Critique' },
+      { nom: 'OPR et réserves',            debut: '2026-11-01', fin: '2026-12-15', avancement:   0, responsable: 'M. Kader Omar',   priorite: 'Critique' },
+      { nom: 'Levée des réserves',          debut: '2026-12-01', fin: '2026-12-20', avancement:   0, responsable: 'DJI FU SARL',    priorite: 'Haute'    },
+      { nom: 'Réception définitive',        debut: '2026-12-20', fin: '2026-12-31', avancement:   0, responsable: 'M. Kader Omar',   priorite: 'Critique' },
     ],
   },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Timeline: March 2024 → December 2025 = 22 months */
-const PROJECT_START = new Date('2024-03-01')
-const PROJECT_END   = new Date('2025-12-31')
+/** Timeline: October 2024 → December 2026 = 27 months */
+const PROJECT_START = new Date('2024-10-01')
+const PROJECT_END   = new Date('2026-12-31')
 const TOTAL_MS = PROJECT_END.getTime() - PROJECT_START.getTime()
 
 function pct(dateStr: string): number {
@@ -130,7 +130,7 @@ export default function PlanningPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Planning Général — Gantt</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Polyclinique Cité Nassib · Mars 2024 → Décembre 2025 (22 mois)
+            Polyclinique Cité Nassib · Oct. 2024 → Déc. 2026 (27 mois)
           </p>
         </div>
         <div className="flex gap-3 text-xs flex-wrap">

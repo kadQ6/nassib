@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ARCHI HOSP
 
-## Getting Started
+Plateforme de pilotage de chantier hospitalier — K'BIO.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router) + TypeScript + Tailwind CSS 4
+- Supabase (Auth, PostgreSQL, Storage, RLS)
+- Données démo intégrées pour développement sans backend
+
+## Démarrage
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrir [http://localhost:3000](http://localhost:3000) — mode démo activé via `.env.local`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Documentation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- [Plan d'architecture complet](docs/PLAN_ARCHITECTURE.md)
+- Schéma SQL : `supabase/migrations/00001_init_schema.sql`
 
-## Learn More
+## Modules MVP
 
-To learn more about Next.js, take a look at the following resources:
+| Module | Route |
+|--------|-------|
+| Dashboard chantier | `/` |
+| Planning WBS + Gantt | `/planning` |
+| Lots techniques | `/lots` |
+| Locaux room-by-room | `/locaux` |
+| Réserves | `/reserves` |
+| Documents | `/documents` |
+| Approvisionnements | `/approvisionnements` |
+| Équipements biomédicaux | `/equipements` |
+| Essais / réception | `/essais` |
+| BOQ / paiements | `/boq`, `/boq/paiements` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Configuration Supabase
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Copier `.env.local.example` vers `.env.local` et renseigner :
 
-## Deploy on Vercel
+```
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+NEXT_PUBLIC_DEMO_MODE=false
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Puis appliquer la migration SQL sur votre projet Supabase.

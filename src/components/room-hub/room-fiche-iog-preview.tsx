@@ -26,7 +26,7 @@ export function RoomFicheIogPreview({ hub }: { hub: RoomHub }) {
         <div>
           <h2 className="text-base font-semibold text-[#003F72]">Fiche local IOG — aperçu</h2>
           <p className="text-xs text-slate-500">
-            Format K&apos;BIO / Fondation IOG · données préremplies depuis la fiche technique
+            Format A4 paysage · gabarit IOG · plan d&apos;implantation équipements 180526
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -41,7 +41,14 @@ export function RoomFicheIogPreview({ hub }: { hub: RoomHub }) {
         </div>
       </div>
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-100 p-2">
-        <NassibFichePrintView data={data} embedded />
+        <div style={{ minWidth: "297mm" }}>
+          <NassibFichePrintView
+          data={data}
+          roomCode={hub.room.code}
+          roomName={hub.room.name}
+          embedded
+        />
+        </div>
       </div>
     </section>
   );

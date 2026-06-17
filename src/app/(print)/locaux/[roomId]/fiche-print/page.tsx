@@ -33,5 +33,12 @@ export default async function FichePrintPage({
     planDef?.layout ?? [],
   );
 
-  return <NassibFichePrintView data={data} autoPrint={auto === "1"} />;
+  return (
+    <NassibFichePrintView
+      data={data}
+      roomCode={hub.room.code}
+      roomName={hub.room.name}
+      autoPrint={auto === "1"}
+    />
+  );
 }

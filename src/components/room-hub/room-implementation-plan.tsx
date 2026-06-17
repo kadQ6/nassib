@@ -3,10 +3,12 @@ import { resolveImplementationPlanImage } from "@/lib/room-sheet/implementation-
 export function ImplementationPlanImage({
   roomCode,
   compact = false,
+  printMode = false,
   className = "",
 }: {
   roomCode: string;
   compact?: boolean;
+  printMode?: boolean;
   className?: string;
 }) {
   const plan = resolveImplementationPlanImage(roomCode);
@@ -23,9 +25,11 @@ export function ImplementationPlanImage({
         loading="eager"
         decoding="async"
         className={
-          compact
-            ? "h-auto w-full object-contain object-left-top"
-            : "h-auto max-h-[320px] w-full object-contain object-left-top"
+          printMode
+            ? "h-auto w-full max-h-[105mm] object-contain"
+            : compact
+              ? "h-auto w-full object-contain object-left-top"
+              : "h-auto max-h-[320px] w-full object-contain object-left-top"
         }
       />
     </div>

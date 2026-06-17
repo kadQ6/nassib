@@ -107,7 +107,7 @@ export function NassibFichePrintView({
       <article className="nf-sheet">
         <header className="nf-header">
           <div>
-            <p className="nf-brand">K&apos;BIO — Construction Clinique Djibouti</p>
+            <p className="nf-brand">K&apos;BIO — Polyclinique Nassib</p>
             <p className="nf-sub">Fiche local — Polyclinique Nassib · Fondation IOG</p>
           </div>
           <div className="nf-header-id">

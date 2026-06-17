@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgressBar } from "@/components/shared/progress-bar";
 import type { RoomHub } from "@/types/room-hub";
+import { RoomFicheIogPreview } from "@/components/room-hub/room-fiche-iog-preview";
 import { RoomSheetPanel } from "@/components/room-hub/room-sheet-panel";
 import { RoomInventorySheet } from "@/components/equipements/room-inventory-sheet";
 import { RoomNameEditor } from "@/components/room-hub/room-name-editor";
@@ -145,12 +146,15 @@ export function RoomHubCockpit({
       </Card>
 
       {tab === "fiche" && (
-        <RoomSheetPanel
-          sheet={sheet}
-          roomId={room.id}
-          roomCode={room.code}
-          roomName={profile.functionalRole}
-        />
+        <>
+          <RoomSheetPanel
+            sheet={sheet}
+            roomId={room.id}
+            roomCode={room.code}
+            roomName={profile.functionalRole}
+          />
+          <RoomFicheIogPreview hub={hub} />
+        </>
       )}
 
       {tab === "overview" && (

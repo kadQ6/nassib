@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { updateRoomSheetAction } from "@/app/actions/room-sheet";
 import { editFormToPatch, sheetToEditForm, type SheetEditForm } from "@/lib/room-sheet/form";
@@ -334,7 +335,15 @@ export function RoomSheetPanel({
           )}
           {saveError && <p className="mt-1 text-sm text-red-600">{saveError}</p>}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/locaux/${roomId}/fiche-print`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-8 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-[#003F72] hover:bg-slate-50"
+          >
+            Imprimer la fiche local
+          </Link>
           {editing ? (
             <>
               <Button variant="outline" size="sm" onClick={cancelEdit} disabled={pending}>

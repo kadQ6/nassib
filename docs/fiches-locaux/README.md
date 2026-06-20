@@ -43,6 +43,7 @@ d'implantation assemblés en **A3 paysage**, 1 plan par page, cartouche en pied 
 python3 scripts/gen-plans-generaux.py        # plans de principe (zonage + réseaux)
 node   scripts/gen-fiches-locaux.mjs         # fiches HTML + rooms-data.json
 python3 scripts/gen-fiches-xlsx.py           # classeur Excel éditable
+python3 scripts/gen-fiches-docx.py           # fiches Word (1 page/local)
 python3 scripts/gen-plans-implantation.py    # plans d'implantation des prises
 python3 scripts/gen-plans-pdf.py             # dossier PDF A3 des 8 plans
 ```
@@ -56,6 +57,7 @@ python3 scripts/gen-plans-pdf.py             # dossier PDF A3 des 8 plans
 | `fiches-locaux-nassib.html` | 76 fiches (1/local) au format K'BIO, imprimables A4 paysage |
 | `fiches-locaux-nassib.pdf` | Même contenu, PDF prêt à diffuser (couverture + 76 fiches) |
 | `fiches-locaux-nassib.xlsx` | **Classeur Excel éditable** — matrice room-by-room (76 locaux × 55 colonnes groupées : identité, finitions, portes, CVC, CFO, CFA, fluides, plomberie) + feuille Légende. Filtres + volets figés. |
+| `fiches-locaux-nassib.docx` | **Word éditable** — 1 page A4 paysage par local, même gabarit que le PDF (en-tête + finitions/portes/CVC à gauche ; CFO/CFA + fluides + plomberie + observations à droite). |
 
 Chaque fiche reprend le gabarit « fiche local K'BIO » et remplit, par local :
 finitions (sols/murs/plafonds/plinthes), portes, CVC (renouvellement, T°, surpression,

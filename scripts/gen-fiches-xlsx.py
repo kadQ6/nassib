@@ -107,7 +107,8 @@ for idx, (key, label, grp, width) in enumerate(COLS, start=1):
 ws.row_dimensions[3].height = 40
 
 # Données
-for ri, r in enumerate(sorted(DATA, key=lambda x: (x["level"], x["code"])), start=4):
+LVLORD = {"RDC": 0, "R+1": 1, "exterieur": 2}
+for ri, r in enumerate(sorted(DATA, key=lambda x: (LVLORD.get(x["level"], 9), x["code"])), start=4):
     for ci, (key, label, grp, width) in enumerate(COLS, start=1):
         val = r.get(key, "")
         cell = ws.cell(ri, ci, val)

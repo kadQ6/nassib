@@ -349,3 +349,23 @@ mkdirSync(outDir,{recursive:true});
 const outFile=join(outDir,"fiches-locaux-nassib.html");
 writeFileSync(outFile,html,"utf8");
 console.log(`OK — ${ROOMS.length} fiches écrites dans ${outFile}`);
+
+// Export JSON des valeurs clés par local (pour les plans d'implantation des prises)
+const data=ROOMS.map((room)=>{
+  const id=tpl(room.code,room.zf,room.role),t=T[id],g=gaz(room),hb=hasHeadboard(room);
+  const crit=({bloc_cesarienne:"C",bloc_operatoire:"C",sspi_reveil:"C",urgences_dechocage:"C",
+    urgences_box:"E",salle_travail:"E",chambre_patient:"E",hospit_jour:"E",imagerie:"E",
+    laboratoire:"E",sterilisation:"E",biberonnerie:"E",consultation:"M",accueil_admin:"F",
+    support:"F",locaux_techniques_vrd:"C"})[id]||"M";
+  return {
+    code:room.code, name:room.name, level:room.level, dept:room.dept, crit,
+    o2:g.o2, air:g.air, vide:g.vide, n2o:g.n2o?1:0, agss:g.agss?1:0,
+    pc16:t.cfo.s16, pc20:t.cfo.s32, ded:t.cfo.ded,
+    ondule: hb?4:(crit==="C"?2:t.cfo.em),
+    rj45: hb?t.cfa.rj45+2:t.cfa.rj45,
+    nurse: hb?Math.max(1,t.cfa.nurse):t.cfa.nurse,
+    cctv:t.cfa.cctv, access:t.cfa.access, hb:hb?1:0,
+  };
+});
+writeFileSync(join(outDir,"rooms-data.json"),JSON.stringify(data,null,1),"utf8");
+console.log(`OK — données JSON: ${join(outDir,"rooms-data.json")}`);

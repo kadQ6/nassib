@@ -16,12 +16,28 @@ indice 180526 et des fiches d'équipement FIOG, en lien avec l'étude
 | `R1_GAZ.png` | Idem niveau R+1 |
 
 Zonage **indicatif de principe** (avant-projet) : le détail terminal local-par-local
-est porté par les fiches locaux ci-dessous. Positions exactes à figer par les BE.
+est porté par les plans d'implantation et les fiches ci-dessous.
+
+### Plans d'implantation des prises (repères par local)
+
+Niveau de détail supérieur : un repère compact des prises est placé **à l'emplacement
+de chaque local** sur le plan 2D réel.
+
+| Fichier | Contenu |
+|---|---|
+| `RDC_IMPLANTATION_GAZ.png` / `R1_IMPLANTATION_GAZ.png` | Prises O₂ / Air / Vide (+N₂O/AGSS) par local desservi |
+| `RDC_IMPLANTATION_CFO_CFA.png` / `R1_IMPLANTATION_CFO_CFA.png` | PC normale, PC ondulée/secourue, RJ45, appel malade, alim. dédiées par local |
+
+> ⚠️ Le plan architecte place les **chambres maternité 1-14 au R+1** (le catalogue en
+> modélise une partie au RDC — **écart R-13**). Les plans d'implantation suivent le plan
+> visible. Implantation **indicative** à caler sur fond DWG ; positions exactes par le BE.
 
 **Régénérer :**
 ```bash
 # nécessite les rendus PNG des plans dans $PLANS_SRC (défaut /tmp/plans)
-python3 scripts/gen-plans-generaux.py
+python3 scripts/gen-plans-generaux.py        # plans de principe (zonage + réseaux)
+node   scripts/gen-fiches-locaux.mjs         # fiches + rooms-data.json
+python3 scripts/gen-plans-implantation.py    # plans d'implantation des prises
 ```
 
 ## 2. Fiches locaux remplies (room-by-room)

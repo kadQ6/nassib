@@ -28,9 +28,9 @@ de chaque local** sur le plan 2D réel.
 | `RDC_IMPLANTATION_GAZ.png` / `R1_IMPLANTATION_GAZ.png` | Prises O₂ / Air / Vide (+N₂O/AGSS) par local desservi |
 | `RDC_IMPLANTATION_CFO_CFA.png` / `R1_IMPLANTATION_CFO_CFA.png` | PC normale, PC ondulée/secourue, RJ45, appel malade, alim. dédiées par local |
 
-> ⚠️ Le plan architecte place les **chambres maternité 1-14 au R+1** (le catalogue en
-> modélise une partie au RDC — **écart R-13**). Les plans d'implantation suivent le plan
-> visible. Implantation **indicative** à caler sur fond DWG ; positions exactes par le BE.
+> **Maternité** : le RDC ne comporte **aucune chambre maternité** (plateau obstétrical
+> uniquement : pré-travail, travail, bloc). Les **14 chambres maternité sont au R+1**
+> (plan A-02). Implantation **indicative** à caler sur fond DWG ; positions exactes par le BE.
 
 **Régénérer :**
 ```bash

@@ -39,7 +39,7 @@ ZONES = {
         (.68, .12, .96, .88, "URGENCES\nBox 1-4 · Déchocage · Petit chir · Mini-labo", "C"),
     ],
     "R1": [
-        (.10, .11, .40, .92, "HOSPITALISATION MATERNITÉ\nChambres 9-14 + 1-8", "E"),
+        (.10, .11, .40, .92, "HOSPITALISATION MATERNITÉ\nChambres 1-14 (post-partum)", "E"),
         (.40, .11, .52, .55, "BIBONNERIE · NÉONAT\nInfirmerie", "E"),
         (.52, .11, .66, .55, "BUREAUX MÉDICAUX", "M"),
         (.40, .56, .66, .92, "ADMINISTRATION · DIRECTION\nSalle d'attente", "F"),
@@ -86,11 +86,12 @@ CROP = (30, 360, 1980, 1560)  # emprise bâtiment dans le rendu 150 dpi
 
 
 def base_building(level):
-    src = os.path.join(SRC, "RDC-1.png" if level == "RDC" else "R1-1.png")
-    im = Image.open(src).convert("RGB").crop(CROP)
-    # éclaircir le fond pour faire ressortir l'overlay
+    # base nette 300 dpi ramenée à l'échelle des coordonnées (≈1950 px) → texte net
+    src = os.path.join(SRC, "RDC300-1.png" if level == "RDC" else "R1300-1.png")
+    im = Image.open(src).convert("RGB").crop((60, 720, 3960, 3120))
+    im = im.resize((1950, 1200), Image.LANCZOS)
     white = Image.new("RGB", im.size, (255, 255, 255))
-    im = Image.blend(im, white, 0.45)
+    im = Image.blend(im, white, 0.42)
     return im
 
 

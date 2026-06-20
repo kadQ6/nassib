@@ -101,14 +101,13 @@ const ROOMS=[
   r("VES-H","Vestiaire hommes","RDC","A-01","vestiaires",18,"Support","Vestiaire personnel H",{}),
   r("VES-F","Vestiaire femmes","RDC","A-01","vestiaires",14,"Support","Vestiaire personnel F",{}),
   r("TEC-01","Local technique fluides & CVC","exterieur","VRD-01","locaux_techniques",90,"Technique / VRD","Production O₂ & CVC",{}),
-  // RDC — Chambres maternité 1-8
-  ...Array.from({length:8},(_,i)=>r(`MAT-${String(i+1).padStart(2,"0")}`,`Chambre maternité ${i+1}`,"RDC","A-01","gyneco_obstetrique",18,"Maternité","Chambre maternité",LIT(1))),
+  // (Chambres maternité 1-14 : toutes au R+1 — voir plus bas)
   // R+1 — Hospitalisation médicale
   ...[1,2,3,4,5,6].map(n=>r(`HOS-0${n}`,`Chambre médicale ${n}`,"R+1","A-02","hospitalisation",16,"Médecine","Hospitalisation médicale",LIT(1))),
   r("HOS-07","Chambre médicale 7","R+1","A-02","hospitalisation",22,"Médecine","Hospitalisation médicale (double)",LIT(2)),
   r("HDJ-01","Hospitalisation de jour","R+1","A-02","hospitalisation",45,"Médecine","Hospitalisation de jour",B(5)),
   // R+1 — Maternité chambres 9-14 + biberonnerie
-  ...[9,10,11,12,13,14].map(n=>r(`MAT-${String(n).padStart(2,"0")}`,`Chambre maternité ${n}`,"R+1","A-02","gyneco_obstetrique",18,"Maternité","Chambre maternité",LIT(n>=12?2:1))),
+  ...Array.from({length:14},(_,i)=>{const n=i+1;return r(`MAT-${String(n).padStart(2,"0")}`,`Chambre maternité ${n}`,"R+1","A-02","gyneco_obstetrique",18,"Maternité","Chambre maternité",LIT(n>=12?2:1));}),
   r("BIB-01","Biberonnerie & soin bébé","R+1","A-02","neonatologie",38,"Maternité","Biberonnerie / soin nouveau-né",{berceau:6}),
   // R+1 — Admin / bureaux
   r("ACC-R1","Accueil R+1","R+1","A-02","accueil_admin",20,"Administration","Accueil étage",{}),

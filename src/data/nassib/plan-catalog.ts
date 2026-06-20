@@ -122,8 +122,10 @@ function matRoom(n: number, opts?: { wc?: boolean; area?: number; status?: PlanR
   return room({
     code: `MAT-${String(n).padStart(2, "0")}`,
     name: `Chambre maternité ${n}`,
-    level: n <= 8 ? "RDC" : "R+1",
-    planSheet: n <= 8 ? "A-01" : "A-02",
+    // Plan architecte : toutes les chambres maternité (post-partum) sont au R+1.
+    // Le RDC n'accueille que le plateau obstétrical (pré-travail, travail, bloc).
+    level: "R+1",
+    planSheet: "A-02",
     zoneId: "zone-mat",
     zoneFunction: "gyneco_obstetrique",
     areaM2: opts?.area ?? 18,
@@ -224,9 +226,6 @@ export const PLAN_ROOM_CATALOG: PlanRoomDef[] = [
   room({ code: "VES-F", name: "Vestiaire femmes", level: "RDC", planSheet: "A-01", zoneId: "zone-circ", zoneFunction: "vestiaires", areaM2: 14, functionalRole: "Vestiaire personnel F", clinicalActivity: "Locaux personnel", department: "Support", lots: ["LOT-GO"], needs: NEEDS.support, staffing: { nurses: 0, doctors: 0, aides: 0, admin: 0 }, prerequisites: [], receptionStatus: "not_started", layout: LAYOUTS.vestiaireF, status: "finishes", checklistDone: 7, checklistTotal: 10, reservesOpen: 0 }),
   room({ code: "TEC-01", name: "Local technique fluides & CVC", level: "exterieur", planSheet: "VRD-01", zoneId: "zone-vrd", zoneFunction: "locaux_techniques", areaM2: 90, functionalRole: "Production O₂ & CVC — VRD arrière bâtiment", clinicalActivity: "Unité de production d'oxygène, groupes froid, TGBT (hors enveloppe bâtiment)", department: "Technique / VRD", lots: ["LOT-VRD", "LOT-CVC", "LOT-FLUIDES", "LOT-CFO"], needs: { ...NEEDS.support, cvc: true, plumbing: true, medicalGas: true, biomedicalEquipment: true }, staffing: { nurses: 0, doctors: 0, aides: 0, admin: 0 }, prerequisites: ["Unité de production d'oxygène", "Emprise VRD validée — arrière bâtiment", "Alimentation ENEDIS / TGBT"], receptionStatus: "not_started", layout: [{ name: "Unité de production d'oxygène", category: "technical", qty: 1 }, { name: "Groupe froid CVC", category: "biomedical", qty: 2 }, { name: "TGBT", category: "technical", qty: 1 }], status: "mep_embedded", checklistDone: 6, checklistTotal: 14, reservesOpen: 2 }),
 
-  // ── RDC — Chambres maternité 1-8 (plan implantation) ──
-  ...Array.from({ length: 8 }, (_, i) => matRoom(i + 1)),
-
   // ── R+1 — Hospitalisation médicale ──
   hosRoom(1, LAYOUTS.chambreMedA),
   hosRoom(2, LAYOUTS.chambreMedB),
@@ -237,8 +236,8 @@ export const PLAN_ROOM_CATALOG: PlanRoomDef[] = [
   hosRoom(7, LAYOUTS.chambreMedDouble, 22),
   room({ code: "HDJ-01", name: "Hospitalisation de jour", level: "R+1", planSheet: "A-02", zoneId: "zone-hosp", zoneFunction: "hospitalisation", areaM2: 45, functionalRole: "Hospitalisation de jour", clinicalActivity: "Soins de jour", department: "Médecine", lots: ["LOT-GO", "LOT-CVC", "LOT-PLOMB"], needs: NEEDS.chambre, staffing: { nurses: 2, doctors: 1, aides: 2, admin: 0 }, prerequisites: [], receptionStatus: "not_started", layout: LAYOUTS.hospitJour, status: "rough_in", checklistDone: 3, checklistTotal: 16, reservesOpen: 0 }),
 
-  // ── R+1 — Maternité chambres 9-14 + biberonnerie ──
-  ...Array.from({ length: 6 }, (_, i) => matRoom(i + 9)),
+  // ── R+1 — Maternité chambres 1-14 + biberonnerie ──
+  ...Array.from({ length: 14 }, (_, i) => matRoom(i + 1)),
   room({ code: "BIB-01", name: "Biberonnerie & soin bébé", level: "R+1", planSheet: "A-02", zoneId: "zone-neo", zoneFunction: "neonatologie", areaM2: 38, functionalRole: "Biberonnerie", clinicalActivity: "Soins nouveau-nés", department: "Maternité", lots: ["LOT-GO", "LOT-CVC", "LOT-PLOMB"], needs: NEEDS.chambre, staffing: { nurses: 2, doctors: 0, aides: 2, admin: 0 }, prerequisites: ["Couveuses"], receptionStatus: "not_started", layout: LAYOUTS.biberonnerie, status: "rough_in", checklistDone: 3, checklistTotal: 18, reservesOpen: 0 }),
 
   // ── R+1 — Admin / bureaux ──

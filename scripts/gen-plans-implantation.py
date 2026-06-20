@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Plans d'IMPLANTATION DES PRISES TERMINALES (repères par local) — niveau de détail
-supérieur au zonage de principe. Place, à l'emplacement de chaque local sur le
-plan 2D réel, un repère compact des prises :
-  - gaz médicaux : O₂ / Air / Vide (+ N₂O/AGSS) par local desservi ;
-  - CFO/CFA : PC normale, PC ondulée/secourue, RJ45, appel malade.
+Plans d'IMPLANTATION DES PRISES TERMINALES par local — rendu architectural propre.
+Sur fond de plan 2D net (300 dpi), une étiquette claire par local indique le code
+local + les prises :
+  - gaz médicaux : O₂ / Air / Vide (+ N₂O/AGSS) ;
+  - CFO/CFA : PC normale, PC ondulée/secourue, RJ45, appel malade, alim. dédiées.
 
-Coordonnées des locaux relevées sur les plans A-01 (RDC) / A-02 (R+1).
-Valeurs lues depuis docs/fiches-locaux/rooms-data.json (généré par gen-fiches-locaux.mjs).
+Le RDC n'accueille AUCUNE chambre maternité (plateau obstétrical uniquement) ;
+les 14 chambres maternité sont au R+1 (plan architecte).
 
-Sortie : public/plans/generated/{RDC,R1}_IMPLANTATION_{GAZ,CFO_CFA}.png
+Valeurs : docs/fiches-locaux/rooms-data.json (gen-fiches-locaux.mjs).
+Sortie  : public/plans/generated/{RDC,R1}_IMPLANTATION_{GAZ,CFO_CFA}.png
 """
 import os, json
 from PIL import Image, ImageDraw, ImageFont
@@ -25,10 +26,14 @@ FB = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 FR = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 def f(sz, b=True): return ImageFont.truetype(FB if b else FR, sz)
 
-CRITCOL = {"C": (220, 40, 40), "E": (240, 140, 20), "M": (235, 205, 30), "F": (70, 170, 90)}
-CROP = (30, 360, 1980, 1560)
+INK = (28, 33, 40)
+CRITCOL = {"C": (210, 45, 45), "E": (235, 140, 25), "M": (225, 195, 30), "F": (70, 165, 90)}
+CRITNAME = {"C": "Critique", "E": "Élevé", "M": "Moyen", "F": "Faible"}
+GAS = {"o2": ("O₂", (0, 150, 70)), "air": ("Air", (0, 135, 200)), "vide": ("V", (95, 105, 120))}
 
-# ── Coordonnées (fraction du crop bâtiment 1950×1200) ────────────────────────
+# Fond 300 dpi (4961×3508) ; emprise bâtiment = CROP 150dpi ×2
+CROP = (60, 720, 3960, 3120)
+
 RDC_XY = {
     "STE-01": (.28, .13), "BLC-01": (.225, .16), "SAS-BLC": (.305, .24), "REV-01": (.345, .205),
     "VES-F": (.37, .30), "LAB-01": (.46, .30),
@@ -46,13 +51,12 @@ RDC_XY = {
     "BGYN-01": (.55, .505), "BGYN-02": (.58, .51),
     "ACC-01": (.665, .555), "CAI-01": (.625, .585), "ADM-01": (.625, .64), "ATT-01": (.72, .61),
 }
-# Plan architecte : chambres maternité 1-14 toutes au R+1 (écart R-13 vs catalogue)
 R1_XY = {
     "MAT-11": (.22, .22), "MAT-10": (.305, .22), "MAT-09": (.24, .33),
     "MAT-08": (.235, .49), "MAT-07": (.235, .555), "MAT-05": (.235, .615),
     "MAT-03": (.235, .70), "MAT-01": (.235, .775),
     "MAT-06": (.305, .615), "MAT-04": (.305, .70), "MAT-02": (.305, .775),
-    "MAT-12": (.50, .49), "MAT-13": (.47, .49), "MAT-14": (.525, .49),
+    "MAT-13": (.47, .49), "MAT-12": (.505, .49), "MAT-14": (.535, .49),
     "BIB-01": (.375, .49),
     "BUR-R1-1": (.16, .38), "BUR-R1-2": (.16, .48),
     "BUR-R1-3": (.52, .34), "BUR-R1-4": (.58, .34), "BUR-R1-5": (.64, .34),
@@ -64,73 +68,75 @@ R1_XY = {
 
 
 def base_building(level):
-    src = os.path.join(SRC, "RDC-1.png" if level == "RDC" else "R1-1.png")
+    src = os.path.join(SRC, "RDC300-1.png" if level == "RDC" else "R1300-1.png")
     im = Image.open(src).convert("RGB").crop(CROP)
-    return Image.blend(im, Image.new("RGB", im.size, (255, 255, 255)), 0.55)
+    return Image.blend(im, Image.new("RGB", im.size, (255, 255, 255)), 0.30)
 
 
-def chip(d, x, y, text, fill, w=None):
-    fnt = f(13)
-    tw = d.textlength(text, font=fnt)
-    w = w or int(tw + 8)
-    d.rectangle((x, y, x + w, y + 17), fill=fill, outline=(20, 20, 20), width=1)
-    lum = 0.299 * fill[0] + 0.587 * fill[1] + 0.114 * fill[2]
-    d.text((x + 4, y + 1), text, fill=(255, 255, 255) if lum < 150 else (20, 20, 20), font=fnt)
-    return w
+def tag(d, px, py, code, segments, crit):
+    """Étiquette blanche : liseré criticité + code + segments [(texte, couleur_point)]."""
+    fc, fs = f(21), f(20)
+    pad, dot, gap = 8, 7, 12
+    # mesure
+    w_code = d.textlength(code, font=fc)
+    seg_w = []
+    for t, _ in segments:
+        seg_w.append(dot * 2 + 4 + d.textlength(t, font=fs))
+    body_w = sum(seg_w) + gap * (len(segments) - 1) if segments else 0
+    W = int(max(w_code, body_w) + pad * 2 + 8)
+    H = 58
+    x0 = int(px - W / 2); y0 = int(py - H / 2)
+    # leader (point exact -> centre tag)
+    d.ellipse((px - 5, py - 5, px + 5, py + 5), fill=crit, outline=(255, 255, 255))
+    # boîte
+    d.rounded_rectangle((x0, y0, x0 + W, y0 + H), radius=7, fill=(255, 255, 255), outline=(70, 78, 88), width=2)
+    d.rectangle((x0, y0, x0 + 8, y0 + H), fill=crit)
+    # code
+    d.text((x0 + 14, y0 + 5), code, fill=INK, font=fc)
+    # segments
+    x = x0 + 14
+    yy = y0 + 32
+    for (t, col), sw in zip(segments, seg_w):
+        d.ellipse((x, yy + 3, x + dot * 2, yy + 3 + dot * 2), fill=col, outline=(60, 60, 60))
+        d.text((x + dot * 2 + 4, yy), t, fill=INK, font=fs)
+        x += sw + gap
 
 
-def marker_gaz(d, px, py, r):
-    chips = []
-    if r["o2"]: chips.append((f"O₂ {r['o2']}", (0, 150, 70)))
-    if r["air"]: chips.append((f"Air {r['air']}", (0, 140, 200)))
-    if r["vide"]: chips.append((f"Vide {r['vide']}", (90, 100, 110)))
-    if r["n2o"]: chips.append(("N₂O?", (150, 80, 160)))
-    if r["agss"]: chips.append(("AGSS?", (150, 80, 160)))
-    if not chips: return
-    total = 0
-    widths = []
-    for t, c in chips:
-        w = int(d.textlength(t, font=f(13)) + 8); widths.append(w); total += w + 2
-    x0 = int(px - total / 2); y0 = int(py - 8)
-    # fond + leader
-    d.rectangle((x0 - 2, y0 - 2, x0 + total, y0 + 19), fill=(255, 255, 255, 235), outline=CRITCOL[r["crit"]], width=2)
-    x = x0
-    for (t, c), w in zip(chips, widths):
-        chip(d, x, y0, t, c, w); x += w + 2
+def cartouche(d, x, y, w, h, level, mode):
+    d.rectangle((x, y, x + w, y + h), fill=(255, 255, 255), outline=INK, width=3)
+    d.line((x, y + 64, x + w, y + 64), fill=INK, width=2)
+    d.line((x, y + 110, x + w, y + 110), fill=INK, width=2)
+    d.text((x + 14, y + 12), "POLYCLINIQUE NASSIB", fill=INK, font=f(26))
+    d.text((x + 14, y + 40), "Fondation Ismail Omar Guelleh — Djibouti", fill=(90, 95, 102), font=f(16, False))
+    titre = "IMPLANTATION PRISES — GAZ MÉDICAUX" if mode == "gaz" else "IMPLANTATION PRISES — CFO / CFA"
+    d.text((x + 14, y + 72), titre, fill=(0, 90, 70) if mode == "gaz" else (0, 60, 110), font=f(20))
+    d.text((x + 14, y + 120), f"Niveau : {'RDC — A-01' if level=='RDC' else 'R+1 — A-02'}", fill=INK, font=f(17, False))
+    d.text((x + 14, y + 144), "Indice : 180526  ·  Avant-projet — conception", fill=INK, font=f(17, False))
+    d.text((x + 14, y + 168), "Ne vaut pas plan d'exécution.", fill=(150, 60, 60), font=f(15, False))
 
 
-def marker_elec(d, px, py, r):
-    chips = [(f"PC {r['pc16']}", (40, 60, 90))]
-    if r["ondule"]: chips.append((f"Ond {r['ondule']}", (200, 60, 60)))
-    if r["rj45"]: chips.append((f"RJ {r['rj45']}", (0, 110, 150)))
-    if r["nurse"]: chips.append(("☎AM", (210, 120, 0)))
-    if r["ded"]: chips.append((f"Déd {r['ded']}", (90, 40, 120)))
-    total = 0; widths = []
-    for t, c in chips:
-        w = int(d.textlength(t, font=f(13)) + 8); widths.append(w); total += w + 2
-    x0 = int(px - total / 2); y0 = int(py - 8)
-    d.rectangle((x0 - 2, y0 - 2, x0 + total, y0 + 19), fill=(255, 255, 255, 235), outline=CRITCOL[r["crit"]], width=2)
-    x = x0
-    for (t, c), w in zip(chips, widths):
-        chip(d, x, y0, t, c, w); x += w + 2
+def north(d, x, y):
+    d.polygon([(x, y - 26), (x - 11, y + 14), (x, y + 4), (x + 11, y + 14)], fill=INK)
+    d.text((x - 6, y + 16), "N", fill=INK, font=f(22))
 
 
 def compose(level, mode):
     bld = base_building(level)
     W, H = bld.size
-    PANEL, HEAD = 540, 96
+    PANEL, HEAD = 880, 150
     canvas = Image.new("RGB", (W + PANEL, H + HEAD), (255, 255, 255))
     canvas.paste(bld, (0, HEAD))
     d = ImageDraw.Draw(canvas, "RGBA")
 
-    head_col = (0, 120, 90) if mode == "gaz" else (0, 63, 114)
-    d.rectangle((0, 0, W + PANEL, HEAD), fill=head_col)
-    title = ("IMPLANTATION DES PRISES — GAZ MÉDICAUX" if mode == "gaz"
-             else "IMPLANTATION DES PRISES — CFO / CFA")
-    d.text((20, 14), title, fill=(255, 255, 255), font=f(30))
-    d.text((20, 56), f"Polyclinique Nassib (FIOG) | Niveau {'RDC (A-01)' if level=='RDC' else 'R+1 (A-02)'} | "
-                     f"repères par local — implantation indicative à caler sur fond DWG",
-            fill=(220, 230, 240), font=f(17, False))
+    # bandeau titre sobre
+    accent = (0, 120, 90) if mode == "gaz" else (0, 63, 114)
+    d.rectangle((0, 0, W + PANEL, HEAD), fill=(247, 249, 251))
+    d.rectangle((0, HEAD - 6, W + PANEL, HEAD), fill=accent)
+    d.text((28, 26), "PLAN D'IMPLANTATION DES PRISES TERMINALES", fill=INK, font=f(40))
+    d.text((28, 80), ("Fluides médicaux (O₂ / Air / Vide)" if mode == "gaz"
+                      else "Courants forts & faibles (CFO / CFA)") +
+           "  ·  un repère par local  ·  implantation indicative à caler sur fond DWG",
+           fill=(90, 95, 102), font=f(22, False))
 
     XY = RDC_XY if level == "RDC" else R1_XY
     sub = canvas.crop((0, HEAD, W, H + HEAD))
@@ -138,76 +144,71 @@ def compose(level, mode):
     drawn = 0
     for code, (fx, fy) in XY.items():
         r = BY.get(code)
-        if not r: continue
+        if not r:
+            continue
         px, py = fx * W, fy * H
         if mode == "gaz":
-            if r["o2"] + r["air"] + r["vide"] + r["n2o"] + r["agss"] == 0:
+            segs = []
+            for k in ("o2", "air", "vide"):
+                if r[k]:
+                    lab, col = GAS[k]; segs.append((f"{lab} {r[k]}", col))
+            if r["n2o"]: segs.append(("N₂O?", (150, 80, 160)))
+            if r["agss"]: segs.append(("AGSS?", (150, 80, 160)))
+            if not segs:
                 continue
-            marker_gaz(sd, px, py, r); drawn += 1
+            tag(sd, px, py, code, segs, CRITCOL[r["crit"]]); drawn += 1
         else:
-            marker_elec(sd, px, py, r); drawn += 1
+            segs = [(f"PC {r['pc16']}", (45, 65, 95))]
+            if r["ondule"]: segs.append((f"Ond {r['ondule']}", (205, 60, 60)))
+            if r["rj45"]: segs.append((f"RJ {r['rj45']}", (0, 110, 150)))
+            if r["nurse"]: segs.append(("AM", (210, 120, 0)))
+            if r["ded"]: segs.append((f"Déd {r['ded']}", (95, 45, 125)))
+            tag(sd, px, py, code, segs, CRITCOL[r["crit"]]); drawn += 1
     canvas.paste(sub, (0, HEAD))
 
-    # panneau légende
-    px = W + 14
-    dd = ImageDraw.Draw(canvas)
-    dd.text((px, HEAD + 12), "LÉGENDE", fill=(0, 0, 0), font=f(23))
-    y = HEAD + 48
+    # ── panneau droit ──
+    d = ImageDraw.Draw(canvas, "RGBA")
+    px0 = W + 28
+    north(d, px0 + 30, HEAD + 40)
+    d.text((px0 + 70, HEAD + 18), "LÉGENDE", fill=INK, font=f(30))
+    y = HEAD + 90
     if mode == "gaz":
-        legend = [("O₂ n", (0, 150, 70), "Oxygène — n prises terminales"),
-                  ("Air n", (0, 140, 200), "Air médical 3,5 bar"),
-                  ("Vide n", (90, 100, 110), "Vide / aspiration"),
-                  ("N₂O?", (150, 80, 160), "Protoxyde / AGSS — à confirmer (R-07)")]
-        notes = ["Chaque repère = prises au bandeau de tête",
-                 "(lit/box) ou bras/panneau (bloc, SSPI).",
-                 "Hauteur : 1,40 m bandeau / 1,60 m mural.",
-                 "Locaux sans gaz (admin, attente, stock,",
-                 "vestiaires, imagerie) non repérés.",
-                 "Vannes + alarmes de zone : voir plan",
-                 "général gaz (principe).",
-                 "",
-                 "Sommes prises projet → centrale TEC-01",
-                 "(local technique fluides — VRD arrière)."]
+        items = [("Oxygène (O₂)", (0, 150, 70)), ("Air médical 3,5 bar", (0, 135, 200)),
+                 ("Vide / aspiration", (95, 105, 120)), ("N₂O / AGSS — à confirmer (R-07)", (150, 80, 160))]
+        notes = ["Repère = prises au bandeau de tête (lit / box)",
+                 "ou bras-panneau (bloc, SSPI). H. 1,40 m bandeau.",
+                 "Locaux sans gaz (admin, attente, imagerie, stock,",
+                 "vestiaires) volontairement non repérés.",
+                 "Vannes & alarmes de zone : voir plan de principe."]
     else:
-        legend = [("PC n", (40, 60, 90), "Prises de courant normales (16A)"),
-                  ("Ond n", (200, 60, 60), "Prises ondulées / secourues"),
-                  ("RJ n", (0, 110, 150), "Prises RJ45 (VDI)"),
-                  ("☎AM", (210, 120, 0), "Appel malade / infirmière"),
-                  ("Déd n", (90, 40, 120), "Alimentations dédiées (RX, autoclave…)")]
-        notes = ["Bordure du repère = criticité électrique.",
-                 "PC 20A, BAES, terre, Wi-Fi, vidéo, contrôle",
-                 "d'accès : détaillés dans les fiches locaux.",
-                 "Bandeaux de lit (BTDL) : PC + ondulé + RJ45",
-                 "+ appel malade intégrés à la tête de lit.",
-                 "IT médical : Bloc, SSPI, Déchocage, Petit chir.",
-                 "",
-                 "Implantation indicative (avant-projet) —",
-                 "positions exactes à figer par le BE sur DWG."]
-    for t, c, desc in legend:
-        dd.rectangle((px, y, px + 52, y + 17), fill=c, outline=(20, 20, 20))
-        dd.text((px + 6, y + 1), t, fill=(255, 255, 255), font=f(12))
-        dd.text((px + 60, y), desc, fill=(0, 0, 0), font=f(13, False)); y += 25
-    y += 8
-    dd.text((px, y), "Criticité (bordure) :", fill=(0, 0, 0), font=f(14)); y += 24
-    for k, lab in [("C", "Critique"), ("E", "Élevé"), ("M", "Moyen"), ("F", "Faible")]:
-        dd.rectangle((px, y, px + 22, y + 16), outline=CRITCOL[k], width=3)
-        dd.text((px + 30, y), lab, fill=(0, 0, 0), font=f(13, False)); y += 23
-    y += 8
-    dd.text((px, y), "Notes :", fill=(0, 0, 0), font=f(15)); y += 24
+        items = [("PC — prises normales 16A", (45, 65, 95)), ("PC ondulées / secourues", (205, 60, 60)),
+                 ("RJ45 (VDI)", (0, 110, 150)), ("AM — appel malade / infirmière", (210, 120, 0)),
+                 ("Déd — alim. dédiée (RX, autoclave…)", (95, 45, 125))]
+        notes = ["PC 20A, BAES, terre, Wi-Fi, vidéo, contrôle d'accès :",
+                 "détail dans les fiches locaux.",
+                 "Bandeaux de lit (BTDL) : PC + ondulé + RJ45 + appel",
+                 "malade intégrés à la tête de lit.",
+                 "IT médical : Bloc, SSPI, Déchocage, Petit chir."]
+    for lab, col in items:
+        d.ellipse((px0, y + 2, px0 + 22, y + 24), fill=col, outline=(60, 60, 60))
+        d.text((px0 + 34, y), lab, fill=INK, font=f(20, False)); y += 34
+    y += 14
+    d.text((px0, y), "Liseré de l'étiquette = criticité électrique", fill=INK, font=f(20)); y += 32
+    for k in ("C", "E", "M", "F"):
+        d.rectangle((px0, y, px0 + 30, y + 22), fill=CRITCOL[k]);
+        d.text((px0 + 42, y), CRITNAME[k], fill=INK, font=f(19, False)); y += 30
+    y += 16
+    d.text((px0, y), "Notes", fill=INK, font=f(22)); y += 32
     for n in notes:
-        dd.text((px, y), n, fill=(40, 40, 40), font=f(13, False)); y += 19
-    # locaux non localisés sur ce plan
-    placed = set(XY.keys())
-    miss = [r["code"] for r in DATA if r["level"] == level and r["code"] not in placed
-            and not r["code"].startswith("MAT") and r["code"] != "TEC-01"]
+        d.text((px0, y), n, fill=(70, 75, 82), font=f(18, False)); y += 26
     if level == "RDC":
-        miss = [c for c in miss]  # MAT chambres reportées au R+1 (R-13)
-    dd.text((px, H + HEAD - 56), "Non localisés ici : " + (", ".join(miss) if miss else "—"),
-            fill=(120, 60, 60), font=f(11, False))
-    dd.text((px, H + HEAD - 38), "Chambres maternité 1-14 : reportées au R+1 (plan architecte — R-13).",
-            fill=(120, 60, 60), font=f(11, False))
-    dd.text((px, H + HEAD - 20), "Source : plans A-01/A-02 + fiches FIOG. Ne vaut pas plan d'exécution.",
-            fill=(120, 120, 120), font=f(11, False))
+        y += 8
+        d.text((px0, y), "Le RDC ne comporte aucune chambre maternité.", fill=(150, 60, 60), font=f(18)); y += 26
+        d.text((px0, y), "Les 14 chambres sont au R+1 (plan A-02).", fill=(150, 60, 60), font=f(18, False)); y += 26
+
+    cartouche(d, px0, H + HEAD - 215, PANEL - 56, 195, level, mode)
+    d.text((px0, H + HEAD - 245), "Source : plans A-01/A-02 (180526) + fiches d'équipement FIOG.",
+           fill=(120, 125, 132), font=f(15, False))
 
     name = f"{level}_IMPLANTATION_{'GAZ' if mode=='gaz' else 'CFO_CFA'}.png"
     canvas.save(os.path.join(OUT, name))

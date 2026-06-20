@@ -352,18 +352,44 @@ console.log(`OK — ${ROOMS.length} fiches écrites dans ${outFile}`);
 // Export JSON des valeurs clés par local (pour les plans d'implantation des prises)
 const data=ROOMS.map((room)=>{
   const id=tpl(room.code,room.zf,room.role),t=T[id],g=gaz(room),hb=hasHeadboard(room);
+  const h=t.h, vol=Math.round(room.area*h*10)/10;
   const crit=({bloc_cesarienne:"C",bloc_operatoire:"C",sspi_reveil:"C",urgences_dechocage:"C",
     urgences_box:"E",salle_travail:"E",chambre_patient:"E",hospit_jour:"E",imagerie:"E",
     laboratoire:"E",sterilisation:"E",biberonnerie:"E",consultation:"M",accueil_admin:"F",
     support:"F",locaux_techniques_vrd:"C"})[id]||"M";
+  const isLab=id==="laboratoire"||id==="sterilisation";
+  const isBloc=id==="bloc_cesarienne"||id==="bloc_operatoire"||id==="sspi_reveil";
   return {
-    code:room.code, name:room.name, level:room.level, dept:room.dept, crit,
+    code:room.code, name:room.name, level:room.level, sheet:room.sheet,
+    dept:room.dept, zone:room.zf, role:room.role, template:id, crit,
+    area:room.area, ceilingH:h, volume:vol,
+    // gaz
     o2:g.o2, air:g.air, vide:g.vide, n2o:g.n2o?1:0, agss:g.agss?1:0,
-    pc16:t.cfo.s16, pc20:t.cfo.s32, ded:t.cfo.ded,
+    n2oNote:g.n2o||"", agssNote:g.agss||"",
+    // cfo
+    pc16: hb?2:t.cfo.s16, pc20:t.cfo.s32, ded:t.cfo.ded,
     ondule: hb?4:(crit==="C"?2:t.cfo.em),
+    light:t.cfo.light, baes:t.cfo.em, earth:t.cfo.earth, ip:t.cfo.ip,
+    // cfa
     rj45: hb?t.cfa.rj45+2:t.cfa.rj45,
     nurse: hb?Math.max(1,t.cfa.nurse):t.cfa.nurse,
-    cctv:t.cfa.cctv, access:t.cfa.access, hb:hb?1:0,
+    wifi:t.cfa.wifi, intercom:t.cfa.intercom, cctv:t.cfa.cctv, access:t.cfa.access, tv:t.cfa.tv,
+    hb:hb?1:0,
+    // finitions
+    floor:t.floor, walls:t.walls, ceiling:t.ceiling, skirt:t.skirt,
+    upec:(isLab||isBloc)?"U4P3E3C3":"U3P3E2C2",
+    chargeSol:(id==="locaux_techniques_vrd")?"≥500":(id==="imagerie"||isLab)?"350":"250",
+    // portes
+    doorW:t.door.w, doorH:t.door.h, doorColor:t.door.c, doorFrame:t.door.fr, doorFire:t.door.fire||"—",
+    accessCtrl:t.cfa.access?"Contrôlé":"Libre",
+    // cvc
+    ach:t.vent.ach, tempC:t.vent.t, humid:t.vent.hr||"", surpression:t.vent.pa||"",
+    filtration:isBloc?"F9 / terminal":"M5 + F7", ctaZone:t.cli.cta, coolKw:t.cli.cool?t.cli.kw:0,
+    norm:t.vent.norm,
+    // plomberie
+    ef:t.pl.ef?"oui":"", ec:t.pl.ec?"oui":"", eauTraitee:t.pl.tr?"oui":"",
+    siphons:t.pl.fd, eu:t.pl.eu, ev:t.pl.ev,
+    regime: crit==="C"?"IT médical / secouru + ondulé":crit==="E"?"secouru groupe + ondulé partiel":crit==="M"?"normal + secours ponctuel":"normal",
   };
 });
 writeFileSync(join(outDir,"rooms-data.json"),JSON.stringify(data,null,1),"utf8");

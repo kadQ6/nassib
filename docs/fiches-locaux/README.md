@@ -32,12 +32,18 @@ de chaque local** sur le plan 2D réel.
 > uniquement : pré-travail, travail, bloc). Les **14 chambres maternité sont au R+1**
 > (plan A-02). Implantation **indicative** à caler sur fond DWG ; positions exactes par le BE.
 
+### Dossier PDF A3 (8 plans + page de garde)
+
+`docs/plans/plans-techniques-nassib-A3.pdf` — les 4 plans de principe + 4 plans
+d'implantation assemblés en **A3 paysage**, 1 plan par page, cartouche en pied de page.
+
 **Régénérer :**
 ```bash
 # nécessite les rendus PNG des plans dans $PLANS_SRC (défaut /tmp/plans)
 python3 scripts/gen-plans-generaux.py        # plans de principe (zonage + réseaux)
 node   scripts/gen-fiches-locaux.mjs         # fiches + rooms-data.json
 python3 scripts/gen-plans-implantation.py    # plans d'implantation des prises
+python3 scripts/gen-plans-pdf.py             # dossier PDF A3 des 8 plans
 ```
 
 ## 2. Fiches locaux remplies (room-by-room)

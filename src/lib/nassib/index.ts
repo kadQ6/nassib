@@ -416,7 +416,7 @@ function syncLinkedLogisticsFromProcurement(procurementId: string) {
   if (!targetRoom) return;
 
   const lineId = eq ? `log-eq-${eq.id}` : `log-proc-${proc.id}`;
-  let log = store.logistics.find((l) => l.id === lineId);
+  const log = store.logistics.find((l) => l.id === lineId);
 
   const status = eq
     ? equipmentStatusToLogisticsStatus(eq.status)

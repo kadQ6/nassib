@@ -23,25 +23,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'JSON invalide' }, { status: 400 })
   }
 
-  const nom = (body.project_name || "Projet K'BIO").trim()
-  const code = (body.project_code || '').trim()
+  const name = (body.project_name || "Projet K'BIO").trim()
+  const code = (body.project_code || '').trim() || `NX-${Date.now().toString().slice(-6)}`
 
   const sb = createClient(URL, SERVICE, { auth: { persistSession: false } })
+
+  // idempotent : si le code existe déjà, on retourne ce projet
+  const existing = await sb.from('projects').select('id').eq('code', code).maybeSingle()
+  if (existing.data) {
+    return NextResponse.json({ ok: true, projectId: existing.data.id, detail: `Projet archi déjà présent (${code}).` }, { status: 200 })
+  }
+
   const { data, error } = await sb
-    .from('projets')
+    .from('projects')
     .insert({
-      nom,
-      localisation: body.country ?? null,
-      maitre_ouvrage: body.client_name ?? null,
-      statut: 'En préparation',
-      description: `Projet architectural généré par K'BIO NEXUS${code ? ` (${code})` : ''}.`,
+      name,
+      code,
+      location: body.country ?? null,
+      status: 'draft',
     })
     .select('id')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(
-    { ok: true, projectId: data.id, detail: `Projet architectural créé dans Nassib${code ? ` (${code})` : ''}.` },
+    { ok: true, projectId: data.id, detail: `Projet architectural créé dans Nassib (${code}).` },
     { status: 201 },
   )
 }
